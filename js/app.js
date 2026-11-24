@@ -1,0 +1,1054 @@
+import { FLAGS, TIER_META } from './flags.js';
+import { CanvasManager } from './canvas.js';
+import { compareCanvases, renderTargetFlag } from './comparator.js';
+
+// Constantes de almacenamiento local
+const STORAGE_KEYS = {
+  STREAK: 'flag_drawer_streak',
+  BEST: 'flag_drawer_best',
+  PLAYED: 'flag_drawer_played',
+  SELECTED_TIERS: 'flag_drawer_selected_tiers',
+  DIFF_APPROACH: 'flag_drawer_diff_approach',
+  LANG: 'flag_drawer_lang',
+  THEME: 'flag_drawer_theme',
+  SHIELD_MODE: 'flag_drawer_shield_mode'
+};
+
+// Diccionario de traducción para interfaz bilingüe
+const I18N = {
+  es: {
+    appTitle: 'FLAG DRAWER',
+    streak: 'RACHA',
+    best: 'RÉCORD',
+    played: 'JUGADAS',
+    difficulty: 'Dificultad',
+    allTiers: 'Todas',
+    fameApproachTag: 'Fama',
+    designApproachTag: 'Diseño',
+    drawFlagOf: 'Dibuja la bandera de',
+    loading: 'Cargando...',
+    skipFlag: 'Saltar',
+    checkFlag: 'Evaluar Bandera',
+    comparing: 'Comparando...',
+    brush: 'Pincel',
+    line: 'Línea',
+    fill: 'Relleno',
+    rect: 'Rect',
+    circle: 'Círculo',
+    mirror: 'Espejo',
+    undo: 'Deshacer',
+    clear: 'Limpiar',
+    thickness: 'Grosor',
+    shieldOptional: 'Escudo opcional',
+    shieldRequired: 'Escudo obligatorio',
+    noShield: 'Sin escudo',
+    shieldForgiven: 'Escudo perdonado',
+    yourDrawing: 'Tu dibujo',
+    realFlag: 'Bandera real',
+    showDiff: 'Ver diferencias',
+    hideDiff: 'Ocultar diferencias',
+    shareResult: 'Compartir',
+    nextFlag: 'Siguiente bandera',
+    // Settings
+    settingsTitle: 'Configuración',
+    diffApproach: 'Criterio de Dificultad',
+    descDiffApproach: 'Define cómo se clasifican los 4 niveles de dificultad.',
+    popApproachBtn: 'Por Fama',
+    designApproachBtn: 'Por Complejidad',
+    popExpl: 'Modo Fama: Banderas de países más conocidos (EE. UU., Brasil, Francia) son Tier 1, sin importar su complejidad de diseño.',
+    designExpl: 'Modo Diseño: Banderas de franjas y bicolores simples son Tier 1 (España, Francia, etc.). Escudos y estrellas son niveles más altos.',
+    language: 'Idioma / Language',
+    theme: 'Tema Visual / Theme',
+    themeDark: 'Oscuro',
+    themeLight: 'Claro',
+    shieldSetting: 'Evaluación de Escudos',
+    descShieldSetting: 'Perdonar o exigir escudos e insignias heráldicas complejas.',
+    shieldIgnoreOpt: 'Perdonar (Casual)',
+    shieldRequireOpt: 'Exigir (Experto)',
+    saveSettings: 'Guardar y Continuar',
+    // Toasts
+    copiedToast: 'Resultado copiado al portapapeles',
+    copyFail: 'No se pudo copiar el resultado.',
+    mirrorToastV: 'Espejo: Vertical (Izquierda / Derecha)',
+    mirrorToastH: 'Espejo: Horizontal (Arriba / Abajo)',
+    mirrorToastOff: 'Espejo: Desactivado',
+    settingsSaved: 'Configuración guardada'
+  },
+  en: {
+    appTitle: 'FLAG DRAWER',
+    streak: 'STREAK',
+    best: 'BEST',
+    played: 'PLAYED',
+    difficulty: 'Difficulty',
+    allTiers: 'All',
+    fameApproachTag: 'Fame',
+    designApproachTag: 'Design',
+    drawFlagOf: 'Draw the flag of',
+    loading: 'Loading...',
+    skipFlag: 'Skip',
+    checkFlag: 'Check Flag',
+    comparing: 'Comparing...',
+    brush: 'Brush',
+    line: 'Line',
+    fill: 'Fill',
+    rect: 'Rect',
+    circle: 'Circle',
+    mirror: 'Mirror',
+    undo: 'Undo',
+    clear: 'Clear',
+    thickness: 'Thickness',
+    shieldOptional: 'Shield optional',
+    shieldRequired: 'Shield required',
+    noShield: 'No shield',
+    shieldForgiven: 'Shield forgiven',
+    yourDrawing: 'Your Drawing',
+    realFlag: 'The Real Flag',
+    showDiff: 'Show Pixel Diff',
+    hideDiff: 'Hide Pixel Diff',
+    shareResult: 'Share',
+    nextFlag: 'Next Flag',
+    // Settings
+    settingsTitle: 'Settings',
+    diffApproach: 'Difficulty Criteria',
+    descDiffApproach: 'Determines what makes a flag easy or difficult.',
+    popApproachBtn: 'By Fame',
+    designApproachBtn: 'By Complexity',
+    popExpl: 'Fame Mode: Globally famous countries (USA, Brazil, France) are Tier 1, regardless of their design complexity.',
+    designExpl: 'Design Mode: Simple stripes and bicolors are Tier 1 (Spain, France, etc.). Intricate coats of arms and stars are higher tiers.',
+    language: 'Language',
+    theme: 'Visual Theme',
+    themeDark: 'Dark',
+    themeLight: 'Light',
+    shieldSetting: 'Shields & Heraldry',
+    descShieldSetting: 'Forgive or require complex heraldic coats of arms.',
+    shieldIgnoreOpt: 'Forgive (Casual)',
+    shieldRequireOpt: 'Require (Expert)',
+    saveSettings: 'Done',
+    // Toasts
+    copiedToast: 'Result copied to clipboard',
+    copyFail: 'Could not copy result.',
+    mirrorToastV: 'Mirror: Vertical (Left / Right)',
+    mirrorToastH: 'Mirror: Horizontal (Top / Bottom)',
+    mirrorToastOff: 'Mirror: Off',
+    settingsSaved: 'Settings saved'
+  }
+};
+
+class FlagGame {
+  constructor() {
+    this.flags = FLAGS;
+    this.tierMeta = TIER_META;
+    this.currentFlag = null;
+    this.lastResult = null;
+
+    // Ajustes del juego
+    this.diffApproach = 'popularity'; // 'popularity' | 'design'
+    this.selectedTiers = [1, 2, 3, 4]; // Selección múltiple de niveles
+    this.currentLang = 'es'; // 'es' | 'en'
+    this.currentTheme = 'dark'; // 'dark' | 'light'
+    this.shieldMode = 'ignore'; // 'ignore' | 'require'
+
+    // Estadísticas
+    this.stats = {
+      streak: 0,
+      best: 0,
+      played: 0
+    };
+
+    this.initElements();
+    this.initCanvas();
+    this.loadStats();
+    this.loadSettings();
+    this.attachEventListeners();
+
+    // Iniciar con una bandera aleatoria según los filtros
+    this.pickNextFlag();
+  }
+
+  initElements() {
+    // Header & Stats
+    this.appTitleEl = document.getElementById('app-title');
+    this.statStreakEl = document.getElementById('stat-streak');
+    this.statBestEl = document.getElementById('stat-best');
+    this.statPlayedEl = document.getElementById('stat-played');
+    this.lblStatStreak = document.getElementById('lbl-stat-streak');
+    this.lblStatBest = document.getElementById('lbl-stat-best');
+    this.lblStatPlayed = document.getElementById('lbl-stat-played');
+    this.btnSettings = document.getElementById('btn-settings');
+
+    // Multi-select Difficulty Chips
+    this.lblDifficulty = document.getElementById('lbl-difficulty');
+    this.activeApproachTag = document.getElementById('active-approach-tag');
+    this.tierCounterBadge = document.getElementById('tier-counter-badge');
+    this.chipAll = document.getElementById('chip-all');
+    this.txtChipAll = document.getElementById('txt-chip-all');
+    this.tierChips = document.querySelectorAll('.tier-chip[data-tier]');
+
+    // Desafío
+    this.lblDrawPrompt = document.getElementById('lbl-draw-prompt');
+    this.countryTargetEl = document.getElementById('country-target');
+    this.targetTierBadge = document.getElementById('target-tier-badge');
+    this.targetShieldBadge = document.getElementById('target-shield-badge');
+    this.skipBtn = document.getElementById('skip-btn');
+    this.lblSkipBtn = document.getElementById('lbl-skip-btn');
+
+    // Canvas principal y overlay
+    this.drawingCanvas = document.getElementById('drawing-canvas');
+    this.overlayCanvas = document.getElementById('overlay-canvas');
+
+    // Herramientas
+    this.toolButtons = document.querySelectorAll('.tool-btn[data-tool]');
+    this.toolMirror = document.getElementById('tool-mirror');
+    this.mirrorBadge = document.getElementById('mirror-badge');
+    this.mirrorIcon = document.getElementById('mirror-icon');
+    this.undoBtn = document.getElementById('btn-undo');
+    this.clearBtn = document.getElementById('btn-clear');
+
+    // Nombres de herramientas (I18N)
+    this.toolNameBrush = document.getElementById('tool-name-brush');
+    this.toolNameLine = document.getElementById('tool-name-line');
+    this.toolNameFill = document.getElementById('tool-name-fill');
+    this.toolNameRect = document.getElementById('tool-name-rect');
+    this.toolNameCircle = document.getElementById('tool-name-circle');
+    this.toolNameMirror = document.getElementById('tool-name-mirror');
+    this.toolNameUndo = document.getElementById('tool-name-undo');
+    this.toolNameClear = document.getElementById('tool-name-clear');
+
+    // Grosor
+    this.lblThickness = document.getElementById('lbl-thickness');
+    this.brushSlider = document.getElementById('brush-size');
+    this.brushSizeVal = document.getElementById('brush-size-val');
+    this.brushDot = document.getElementById('brush-dot');
+
+    // Paleta y círculo cromático
+    this.colorSwatches = document.querySelectorAll('.color-swatch[data-color]');
+    this.activeColorSwatch = document.getElementById('active-color-swatch');
+    this.colorWheelBtn = document.getElementById('color-wheel-btn');
+    this.customColorPicker = document.getElementById('custom-color-picker');
+
+    // Botón de evaluar
+    this.submitBtn = document.getElementById('submit-btn');
+    this.lblSubmitBtn = document.getElementById('lbl-submit-btn');
+
+    // Modal de resultados
+    this.resultsModal = document.getElementById('results-modal');
+    this.modalCountryName = document.getElementById('modal-country-name');
+    this.modalTierBadge = document.getElementById('modal-tier-badge');
+    this.modalShieldBadge = document.getElementById('modal-shield-badge');
+    this.gradeBadgeEl = document.getElementById('grade-badge');
+    this.modalScoreEl = document.getElementById('modal-score');
+    this.modalFeedbackEl = document.getElementById('modal-feedback');
+    this.lblYourDrawing = document.getElementById('lbl-your-drawing');
+    this.lblRealFlag = document.getElementById('lbl-real-flag');
+    this.resultUserCanvas = document.getElementById('result-user-canvas');
+    this.resultTargetCanvas = document.getElementById('result-target-canvas');
+    this.resultDiffCanvas = document.getElementById('result-diff-canvas');
+
+    // Modal stats & botones
+    this.modalStatStreak = document.getElementById('modal-stat-streak');
+    this.modalStatBest = document.getElementById('modal-stat-best');
+    this.modalStatPlayed = document.getElementById('modal-stat-played');
+    this.lblModalStreak = document.getElementById('lbl-modal-streak');
+    this.lblModalBest = document.getElementById('lbl-modal-best');
+    this.lblModalPlayed = document.getElementById('lbl-modal-played');
+    this.nextFlagBtn = document.getElementById('next-flag-btn');
+    this.lblNextFlag = document.getElementById('lbl-next-flag');
+    this.shareBtn = document.getElementById('share-btn');
+    this.shareTextEl = document.getElementById('share-text');
+    this.toggleDiffBtn = document.getElementById('toggle-diff-btn');
+    this.diffContainer = document.getElementById('diff-view-container');
+
+    // Modal de configuraciones
+    this.settingsModal = document.getElementById('settings-modal');
+    this.btnCloseSettings = document.getElementById('btn-close-settings');
+    this.btnSaveSettings = document.getElementById('btn-save-settings');
+    this.approachExplanation = document.getElementById('approach-explanation');
+
+    // Botones segmentados de configuración
+    this.btnApproachPop = document.getElementById('btn-approach-pop');
+    this.btnApproachDesign = document.getElementById('btn-approach-design');
+    this.btnLangEs = document.getElementById('btn-lang-es');
+    this.btnLangEn = document.getElementById('btn-lang-en');
+    this.btnThemeDark = document.getElementById('btn-theme-dark');
+    this.btnThemeLight = document.getElementById('btn-theme-light');
+    this.btnShieldIgnore = document.getElementById('btn-shield-ignore');
+    this.btnShieldRequire = document.getElementById('btn-shield-require');
+    this.txtThemeDark = document.getElementById('txt-theme-dark');
+    this.txtThemeLight = document.getElementById('txt-theme-light');
+    this.txtShieldIgnore = document.getElementById('txt-shield-ignore');
+    this.txtShieldRequire = document.getElementById('txt-shield-require');
+
+    // Textos de configuración (I18N)
+    this.settingsTitle = document.getElementById('settings-title');
+    this.lblDiffApproach = document.getElementById('lbl-diff-approach');
+    this.descDiffApproach = document.getElementById('desc-diff-approach');
+    this.lblPopApproach = document.getElementById('lbl-pop-approach');
+    this.lblDesignApproach = document.getElementById('lbl-design-approach');
+    this.lblLanguage = document.getElementById('lbl-language');
+    this.lblTheme = document.getElementById('lbl-theme');
+    this.lblShieldSetting = document.getElementById('lbl-shield-setting');
+    this.descShieldSetting = document.getElementById('desc-shield-setting');
+    this.lblSaveSettings = document.getElementById('lbl-save-settings');
+
+    // Toast
+    this.toastEl = document.getElementById('toast');
+    this.toastTimeout = null;
+  }
+
+  initCanvas() {
+    this.canvasManager = new CanvasManager(this.drawingCanvas, {
+      overlayCanvas: this.overlayCanvas,
+      width: 300,
+      height: 200,
+      onStateChange: (state) => {
+        this.undoBtn.disabled = !state.canUndo;
+        this.updateMirrorUI(state.mirrorMode);
+      }
+    });
+
+    this.updateColor('#CE1126');
+    this.updateBrushSize(10);
+  }
+
+  loadStats() {
+    try {
+      this.stats.streak = parseInt(localStorage.getItem(STORAGE_KEYS.STREAK), 10) || 0;
+      this.stats.best = parseInt(localStorage.getItem(STORAGE_KEYS.BEST), 10) || 0;
+      this.stats.played = parseInt(localStorage.getItem(STORAGE_KEYS.PLAYED), 10) || 0;
+    } catch (_) {
+      this.stats = { streak: 0, best: 0, played: 0 };
+    }
+    this.renderStats();
+  }
+
+  saveStats() {
+    try {
+      localStorage.setItem(STORAGE_KEYS.STREAK, this.stats.streak.toString());
+      localStorage.setItem(STORAGE_KEYS.BEST, this.stats.best.toString());
+      localStorage.setItem(STORAGE_KEYS.PLAYED, this.stats.played.toString());
+    } catch (_) {}
+    this.renderStats();
+  }
+
+  renderStats() {
+    this.statStreakEl.textContent = this.stats.streak;
+    this.statBestEl.textContent = `${this.stats.best}%`;
+    this.statPlayedEl.textContent = this.stats.played;
+
+    if (this.modalStatStreak) this.modalStatStreak.textContent = this.stats.streak;
+    if (this.modalStatBest) this.modalStatBest.textContent = `${this.stats.best}%`;
+    if (this.modalStatPlayed) this.modalStatPlayed.textContent = this.stats.played;
+  }
+
+  loadSettings() {
+    try {
+      // Idioma
+      const savedLang = localStorage.getItem(STORAGE_KEYS.LANG);
+      if (savedLang && ['es', 'en'].includes(savedLang)) {
+        this.currentLang = savedLang;
+      }
+
+      // Tema
+      const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME);
+      if (savedTheme && ['dark', 'light'].includes(savedTheme)) {
+        this.currentTheme = savedTheme;
+      }
+
+      // Criterio de dificultad
+      const savedApproach = localStorage.getItem(STORAGE_KEYS.DIFF_APPROACH);
+      if (savedApproach && ['popularity', 'design'].includes(savedApproach)) {
+        this.diffApproach = savedApproach;
+      }
+
+      // Niveles seleccionados (multi-select)
+      const savedTiers = localStorage.getItem(STORAGE_KEYS.SELECTED_TIERS);
+      if (savedTiers) {
+        const parsed = JSON.parse(savedTiers);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.selectedTiers = parsed.map((n) => parseInt(n, 10));
+        }
+      }
+
+      // Modo escudos
+      const savedShieldMode = localStorage.getItem(STORAGE_KEYS.SHIELD_MODE);
+      if (savedShieldMode && ['ignore', 'require'].includes(savedShieldMode)) {
+        this.shieldMode = savedShieldMode;
+      }
+    } catch (_) {}
+
+    // Aplicar configuraciones al DOM
+    this.applyTheme(this.currentTheme);
+    this.applyTranslations();
+    this.updateChipsUI();
+    this.updateSettingsModalUI();
+  }
+
+  saveSettings() {
+    try {
+      localStorage.setItem(STORAGE_KEYS.LANG, this.currentLang);
+      localStorage.setItem(STORAGE_KEYS.THEME, this.currentTheme);
+      localStorage.setItem(STORAGE_KEYS.DIFF_APPROACH, this.diffApproach);
+      localStorage.setItem(STORAGE_KEYS.SELECTED_TIERS, JSON.stringify(this.selectedTiers));
+      localStorage.setItem(STORAGE_KEYS.SHIELD_MODE, this.shieldMode);
+    } catch (_) {}
+  }
+
+  applyTheme(theme) {
+    this.currentTheme = theme;
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+
+  applyTranslations() {
+    const t = I18N[this.currentLang] || I18N.es;
+    document.documentElement.lang = this.currentLang;
+
+    // Header & stats
+    this.lblStatStreak.textContent = t.streak;
+    this.lblStatBest.textContent = t.best;
+    this.lblStatPlayed.textContent = t.played;
+
+    // Controls bar
+    this.lblDifficulty.textContent = t.difficulty;
+    this.txtChipAll.textContent = t.allTiers;
+    this.activeApproachTag.textContent = (this.diffApproach === 'popularity') ? t.fameApproachTag : t.designApproachTag;
+
+    // Update chip labels for T1..T4
+    for (let i = 1; i <= 4; i++) {
+      const chipTxt = document.getElementById(`txt-chip-${i}`);
+      if (chipTxt) {
+        const meta = this.tierMeta[this.diffApproach][i];
+        const shortName = meta.shortName[this.currentLang];
+        chipTxt.textContent = `T${i}: ${shortName}`;
+      }
+    }
+
+    // Prompt & buttons
+    this.lblDrawPrompt.textContent = t.drawFlagOf;
+    this.lblSkipBtn.textContent = t.skipFlag;
+    this.lblSubmitBtn.textContent = t.checkFlag;
+
+    // Tools
+    this.toolNameBrush.textContent = t.brush;
+    this.toolNameLine.textContent = t.line;
+    this.toolNameFill.textContent = t.fill;
+    this.toolNameRect.textContent = t.rect;
+    this.toolNameCircle.textContent = t.circle;
+    this.toolNameMirror.textContent = t.mirror;
+    this.toolNameUndo.textContent = t.undo;
+    this.toolNameClear.textContent = t.clear;
+    this.lblThickness.textContent = t.thickness;
+
+    // Modal resultados
+    this.lblYourDrawing.textContent = t.yourDrawing;
+    this.lblRealFlag.textContent = t.realFlag;
+    this.shareTextEl.textContent = t.shareResult;
+    this.lblNextFlag.textContent = t.nextFlag;
+    if (this.lblModalStreak) this.lblModalStreak.textContent = t.streak;
+    if (this.lblModalBest) this.lblModalBest.textContent = t.best;
+    if (this.lblModalPlayed) this.lblModalPlayed.textContent = t.played;
+
+    // Modal settings
+    this.settingsTitle.textContent = t.settingsTitle;
+    this.lblDiffApproach.textContent = t.diffApproach;
+    this.descDiffApproach.textContent = t.descDiffApproach;
+    this.lblPopApproach.textContent = t.popApproachBtn;
+    this.lblDesignApproach.textContent = t.designApproachBtn;
+    this.approachExplanation.textContent = (this.diffApproach === 'popularity') ? t.popExpl : t.designExpl;
+    this.lblLanguage.textContent = t.language;
+    this.lblTheme.textContent = t.theme;
+    this.lblShieldSetting.textContent = t.shieldSetting;
+    this.descShieldSetting.textContent = t.descShieldSetting;
+    this.lblSaveSettings.textContent = t.saveSettings;
+    if (this.txtThemeDark) this.txtThemeDark.textContent = t.themeDark;
+    if (this.txtThemeLight) this.txtThemeLight.textContent = t.themeLight;
+    if (this.txtShieldIgnore) this.txtShieldIgnore.textContent = t.shieldIgnoreOpt;
+    if (this.txtShieldRequire) this.txtShieldRequire.textContent = t.shieldRequireOpt;
+
+    // Actualizar nombre del país actual si ya hay bandera activa
+    if (this.currentFlag) {
+      this.countryTargetEl.textContent = this.currentFlag.name[this.currentLang];
+      this.updateFlagShieldBadge();
+    }
+  }
+
+  updateSettingsModalUI() {
+    // 1. Enfoque de dificultad
+    this.btnApproachPop.classList.toggle('active', this.diffApproach === 'popularity');
+    this.btnApproachDesign.classList.toggle('active', this.diffApproach === 'design');
+    const t = I18N[this.currentLang] || I18N.es;
+    this.approachExplanation.textContent = (this.diffApproach === 'popularity') ? t.popExpl : t.designExpl;
+
+    // 2. Idioma
+    this.btnLangEs.classList.toggle('active', this.currentLang === 'es');
+    this.btnLangEn.classList.toggle('active', this.currentLang === 'en');
+
+    // 3. Tema
+    this.btnThemeDark.classList.toggle('active', this.currentTheme === 'dark');
+    this.btnThemeLight.classList.toggle('active', this.currentTheme === 'light');
+
+    // 4. Modo escudos
+    this.btnShieldIgnore.classList.toggle('active', this.shieldMode === 'ignore');
+    this.btnShieldRequire.classList.toggle('active', this.shieldMode === 'require');
+  }
+
+  /**
+   * Gestión de Selección Múltiple de Niveles de Dificultad
+   */
+  toggleTier(tierArg) {
+    if (tierArg === 'all') {
+      // Si ya estaban todos seleccionados, no hacer nada o alternar
+      if (this.selectedTiers.length === 4) {
+        // Mantener al menos Tier 1
+        this.selectedTiers = [1];
+      } else {
+        this.selectedTiers = [1, 2, 3, 4];
+      }
+    } else {
+      const num = parseInt(tierArg, 10);
+      const idx = this.selectedTiers.indexOf(num);
+      if (idx !== -1) {
+        // Deseleccionar: solo si queda al menos uno activo
+        if (this.selectedTiers.length > 1) {
+          this.selectedTiers.splice(idx, 1);
+        } else {
+          // Si era el único, re-activar todos
+          this.selectedTiers = [1, 2, 3, 4];
+        }
+      } else {
+        // Agregar nivel
+        this.selectedTiers.push(num);
+        this.selectedTiers.sort((a, b) => a - b);
+      }
+    }
+
+    this.saveSettings();
+    this.updateChipsUI();
+    this.pickNextFlag();
+  }
+
+  updateChipsUI() {
+    const isAll = this.selectedTiers.length === 4;
+    this.chipAll.classList.toggle('active', isAll);
+
+    for (let i = 1; i <= 4; i++) {
+      const chip = document.getElementById(`chip-${i}`);
+      if (chip) {
+        chip.classList.toggle('active', this.selectedTiers.includes(i));
+      }
+    }
+
+    // Actualizar contador de banderas disponibles
+    const count = this.getFilteredFlags().length;
+    const t = I18N[this.currentLang] || I18N.es;
+    this.tierCounterBadge.textContent = `${count} ${this.currentLang === 'es' ? 'banderas' : 'flags'}`;
+  }
+
+  getFilteredFlags() {
+    const tierProp = (this.diffApproach === 'popularity') ? 'popTier' : 'designTier';
+    const filtered = this.flags.filter((f) => this.selectedTiers.includes(f[tierProp]));
+    return (filtered.length > 0) ? filtered : this.flags;
+  }
+
+  updateFlagShieldBadge() {
+    if (!this.targetShieldBadge) return;
+    const t = I18N[this.currentLang] || I18N.es;
+
+    if (this.currentFlag && this.currentFlag.hasShield) {
+      this.targetShieldBadge.classList.remove('hidden');
+      const isIgnore = (this.shieldMode === 'ignore');
+      const shieldLabel = isIgnore ? t.shieldOptional : t.shieldRequired;
+      this.targetShieldBadge.className = isIgnore ? 'shield-pill' : 'shield-pill active-shield';
+      this.targetShieldBadge.innerHTML = `<svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg><span>${shieldLabel}</span>`;
+    } else {
+      this.targetShieldBadge.classList.add('hidden');
+    }
+  }
+
+  pickNextFlag() {
+    const available = this.getFilteredFlags();
+    if (available.length === 0) return;
+
+    let pool = available;
+    if (this.currentFlag && available.length > 1) {
+      pool = available.filter((f) => f.id !== this.currentFlag.id);
+    }
+
+    const randomIndex = Math.floor(Math.random() * pool.length);
+    this.currentFlag = pool[randomIndex];
+
+    // Nombre en el idioma activo
+    this.countryTargetEl.textContent = this.currentFlag.name[this.currentLang] || this.currentFlag.name.es;
+
+    // Nivel del país según el criterio activo
+    const tierProp = (this.diffApproach === 'popularity') ? 'popTier' : 'designTier';
+    const tierNum = this.currentFlag[tierProp];
+    const meta = this.tierMeta[this.diffApproach][tierNum];
+    const shortName = meta ? meta.shortName[this.currentLang] : `T${tierNum}`;
+
+    this.targetTierBadge.textContent = `T${tierNum}: ${shortName}`;
+    this.targetTierBadge.className = `tier-pill tier-${tierNum}`;
+
+    // Actualizar badge de escudo
+    this.updateFlagShieldBadge();
+
+    // Limpiar canvas
+    this.canvasManager.clear();
+  }
+
+  attachEventListeners() {
+    // Abrir modal de configuración
+    this.btnSettings.addEventListener('click', () => {
+      this.openSettingsModal();
+    });
+
+    this.activeApproachTag.addEventListener('click', () => {
+      this.openSettingsModal();
+    });
+
+    this.btnCloseSettings.addEventListener('click', () => {
+      this.closeSettingsModal();
+    });
+
+    this.btnSaveSettings.addEventListener('click', () => {
+      this.closeSettingsModal();
+      this.showToast(I18N[this.currentLang].settingsSaved);
+    });
+
+    // Segmented: Criterio de dificultad
+    this.btnApproachPop.addEventListener('click', () => {
+      this.setDiffApproach('popularity');
+    });
+
+    this.btnApproachDesign.addEventListener('click', () => {
+      this.setDiffApproach('design');
+    });
+
+    // Segmented: Idioma
+    this.btnLangEs.addEventListener('click', () => {
+      this.setLanguage('es');
+    });
+
+    this.btnLangEn.addEventListener('click', () => {
+      this.setLanguage('en');
+    });
+
+    // Segmented: Tema
+    this.btnThemeDark.addEventListener('click', () => {
+      this.setTheme('dark');
+    });
+
+    this.btnThemeLight.addEventListener('click', () => {
+      this.setTheme('light');
+    });
+
+    // Segmented: Modo Escudos
+    this.btnShieldIgnore.addEventListener('click', () => {
+      this.setShieldMode('ignore');
+    });
+
+    this.btnShieldRequire.addEventListener('click', () => {
+      this.setShieldMode('require');
+    });
+
+    // Chips de selección múltiple de dificultad
+    this.tierChips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const tier = chip.dataset.tier;
+        this.toggleTier(tier);
+      });
+    });
+
+    // Saltar bandera
+    this.skipBtn.addEventListener('click', () => {
+      this.pickNextFlag();
+    });
+
+    // Selección de herramientas (Brush, Line, Fill, Rect, Circle)
+    this.toolButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const tool = btn.dataset.tool;
+        this.canvasManager.setTool(tool);
+
+        this.toolButtons.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    // Modo Espejo: ciclo de 3 estados
+    if (this.toolMirror) {
+      this.toolMirror.addEventListener('click', () => {
+        const mode = this.canvasManager.cycleMirrorMode();
+        const t = I18N[this.currentLang];
+        if (mode === 'vertical') {
+          this.showToast(t.mirrorToastV);
+        } else if (mode === 'horizontal') {
+          this.showToast(t.mirrorToastH);
+        } else {
+          this.showToast(t.mirrorToastOff);
+        }
+      });
+    }
+
+    // Deshacer y Limpiar
+    this.undoBtn.addEventListener('click', () => this.canvasManager.undo());
+    this.clearBtn.addEventListener('click', () => this.canvasManager.clear());
+
+    // Control de grosor del trazo
+    this.brushSlider.addEventListener('input', (e) => {
+      const size = parseInt(e.target.value, 10);
+      this.updateBrushSize(size);
+    });
+
+    // Paleta de colores predefinidos
+    this.colorSwatches.forEach((swatch) => {
+      swatch.addEventListener('click', () => {
+        const color = swatch.dataset.color;
+        this.updateColor(color);
+      });
+    });
+
+    // Disparador del selector cromático
+    if (this.colorWheelBtn && this.customColorPicker) {
+      this.colorWheelBtn.addEventListener('click', (e) => {
+        if (e.target !== this.customColorPicker) {
+          this.customColorPicker.click();
+        }
+      });
+
+      const handlePickerChange = (e) => {
+        const color = e.target.value;
+        this.updateColor(color);
+      };
+
+      this.customColorPicker.addEventListener('input', handlePickerChange);
+      this.customColorPicker.addEventListener('change', handlePickerChange);
+    }
+
+    // Evaluar / Submit
+    this.submitBtn.addEventListener('click', () => {
+      this.evaluateDrawing();
+    });
+
+    // Siguiente bandera desde modal
+    this.nextFlagBtn.addEventListener('click', () => {
+      this.closeModal();
+      this.pickNextFlag();
+    });
+
+    // Compartir resultado
+    this.shareBtn.addEventListener('click', () => {
+      this.shareResult();
+    });
+
+    // Toggle de Diff heatmap
+    this.toggleDiffBtn.addEventListener('click', () => {
+      const isHidden = this.diffContainer.classList.toggle('hidden');
+      const t = I18N[this.currentLang];
+      this.toggleDiffBtn.textContent = isHidden ? t.showDiff : t.hideDiff;
+    });
+
+    // Atajos de teclado útiles
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        this.canvasManager.undo();
+      }
+    });
+  }
+
+  setDiffApproach(approach) {
+    this.diffApproach = approach;
+    this.saveSettings();
+    this.applyTranslations();
+    this.updateChipsUI();
+    this.updateSettingsModalUI();
+    this.pickNextFlag();
+  }
+
+  setLanguage(lang) {
+    this.currentLang = lang;
+    this.saveSettings();
+    this.applyTranslations();
+    this.updateChipsUI();
+    this.updateSettingsModalUI();
+  }
+
+  setTheme(theme) {
+    this.applyTheme(theme);
+    this.saveSettings();
+    this.updateSettingsModalUI();
+  }
+
+  setShieldMode(mode) {
+    this.shieldMode = mode;
+    this.saveSettings();
+    this.updateSettingsModalUI();
+    this.updateFlagShieldBadge();
+  }
+
+  openSettingsModal() {
+    this.updateSettingsModalUI();
+    this.settingsModal.classList.remove('hidden');
+  }
+
+  closeSettingsModal() {
+    this.settingsModal.classList.add('hidden');
+  }
+
+  updateBrushSize(size) {
+    this.canvasManager.setSize(size);
+    this.brushSizeVal.textContent = `${size}px`;
+    const dotSize = Math.max(4, Math.min(22, size * 0.75));
+    this.brushDot.style.width = `${dotSize}px`;
+    this.brushDot.style.height = `${dotSize}px`;
+  }
+
+  updateColor(color) {
+    this.canvasManager.setColor(color);
+    this.brushDot.style.backgroundColor = color;
+
+    if (this.customColorPicker) {
+      this.customColorPicker.value = color;
+    }
+
+    if (this.activeColorSwatch) {
+      this.activeColorSwatch.style.setProperty('--swatch-color', color);
+    }
+
+    let foundMatch = false;
+    const normalizedColor = color.toUpperCase();
+    this.colorSwatches.forEach((swatch) => {
+      if (swatch.dataset.color.toUpperCase() === normalizedColor) {
+        swatch.classList.add('active');
+        foundMatch = true;
+      } else {
+        swatch.classList.remove('active');
+      }
+    });
+
+    if (!foundMatch && this.activeColorSwatch) {
+      this.activeColorSwatch.classList.add('active-custom');
+    } else if (this.activeColorSwatch) {
+      this.activeColorSwatch.classList.remove('active-custom');
+    }
+  }
+
+  updateMirrorUI(mode) {
+    if (!this.toolMirror || !this.mirrorBadge) return;
+
+    if (mode === 'vertical') {
+      this.toolMirror.classList.add('active');
+      this.mirrorBadge.textContent = 'M-V';
+      this.mirrorBadge.className = 'mirror-indicator mode-v';
+      if (this.mirrorIcon) {
+        this.mirrorIcon.innerHTML = `
+          <line x1="12" y1="2" x2="12" y2="22" stroke="currentColor" stroke-dasharray="3 3"></line>
+          <path d="M7 6l-4 6 4 6" stroke="currentColor"></path>
+          <path d="M17 6l4 6-4 6" stroke="currentColor"></path>
+        `;
+      }
+    } else if (mode === 'horizontal') {
+      this.toolMirror.classList.add('active');
+      this.mirrorBadge.textContent = 'M-H';
+      this.mirrorBadge.className = 'mirror-indicator mode-h';
+      if (this.mirrorIcon) {
+        this.mirrorIcon.innerHTML = `
+          <line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-dasharray="3 3"></line>
+          <path d="M6 7l6-4 6 4" stroke="currentColor"></path>
+          <path d="M6 17l6 4 6-4" stroke="currentColor"></path>
+        `;
+      }
+    } else {
+      this.toolMirror.classList.remove('active');
+      this.mirrorBadge.textContent = 'Off';
+      this.mirrorBadge.className = 'mirror-indicator';
+      if (this.mirrorIcon) {
+        this.mirrorIcon.innerHTML = `
+          <line x1="12" y1="2" x2="12" y2="22" stroke="currentColor" stroke-dasharray="3 3"></line>
+          <path d="M7 6l-4 6 4 6"></path>
+          <path d="M17 6l4 6-4 6"></path>
+        `;
+      }
+    }
+  }
+
+  async evaluateDrawing() {
+    if (!this.currentFlag) return;
+
+    const t = I18N[this.currentLang];
+    this.submitBtn.disabled = true;
+    if (this.lblSubmitBtn) {
+      this.lblSubmitBtn.textContent = t.comparing;
+    }
+
+    try {
+      const targetCanvas = await renderTargetFlag(this.currentFlag.url, 300, 200);
+
+      const comparisonOptions = {
+        ignoreShield: (this.shieldMode === 'ignore'),
+        shield: this.currentFlag.shield
+      };
+
+      const result = compareCanvases(this.canvasManager.canvas, targetCanvas, comparisonOptions);
+      this.lastResult = result;
+
+      this.stats.played += 1;
+      if (result.score >= 60) {
+        this.stats.streak += 1;
+      } else {
+        this.stats.streak = 0;
+      }
+
+      if (result.score > this.stats.best) {
+        this.stats.best = result.score;
+      }
+
+      this.saveStats();
+      this.renderResultsModal(targetCanvas, result);
+      this.openModal();
+    } catch (error) {
+      console.error('Error al evaluar dibujo:', error);
+      this.showToast('Error al evaluar bandera');
+    } finally {
+      this.submitBtn.disabled = false;
+      if (this.lblSubmitBtn) {
+        this.lblSubmitBtn.textContent = t.checkFlag;
+      }
+    }
+  }
+
+  renderResultsModal(targetCanvas, result) {
+    const t = I18N[this.currentLang];
+    this.modalCountryName.textContent = this.currentFlag.name[this.currentLang] || this.currentFlag.name.es;
+
+    const tierProp = (this.diffApproach === 'popularity') ? 'popTier' : 'designTier';
+    const tierNum = this.currentFlag[tierProp];
+    const meta = this.tierMeta[this.diffApproach][tierNum];
+    const shortName = meta ? meta.shortName[this.currentLang] : `T${tierNum}`;
+
+    this.modalTierBadge.textContent = `T${tierNum}: ${shortName}`;
+    this.modalTierBadge.className = `tier-pill tier-${tierNum}`;
+
+    if (this.currentFlag.hasShield) {
+      const isIgnore = (this.shieldMode === 'ignore');
+      const shieldLabel = isIgnore ? t.shieldForgiven : t.shieldRequired;
+      this.modalShieldBadge.className = isIgnore ? 'shield-pill' : 'shield-pill active-shield';
+      this.modalShieldBadge.innerHTML = `<svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg><span>${shieldLabel}</span>`;
+      this.modalShieldBadge.classList.remove('hidden');
+    } else {
+      this.modalShieldBadge.textContent = t.noShield;
+      this.modalShieldBadge.className = 'shield-pill';
+      this.modalShieldBadge.classList.remove('hidden');
+    }
+
+    this.modalScoreEl.textContent = `${result.score}%`;
+    this.modalScoreEl.style.color = result.color;
+
+    this.gradeBadgeEl.textContent = result.badge;
+    this.gradeBadgeEl.style.backgroundColor = result.color;
+    this.modalFeedbackEl.textContent = result.feedback;
+
+    const userResultCtx = this.resultUserCanvas.getContext('2d');
+    userResultCtx.clearRect(0, 0, 300, 200);
+    userResultCtx.drawImage(this.canvasManager.canvas, 0, 0, 300, 200);
+
+    const targetResultCtx = this.resultTargetCanvas.getContext('2d');
+    targetResultCtx.clearRect(0, 0, 300, 200);
+    targetResultCtx.drawImage(targetCanvas, 0, 0, 300, 200);
+
+    const diffResultCtx = this.resultDiffCanvas.getContext('2d');
+    diffResultCtx.clearRect(0, 0, 300, 200);
+    diffResultCtx.drawImage(result.diffCanvas, 0, 0, 300, 200);
+
+    this.diffContainer.classList.add('hidden');
+    this.toggleDiffBtn.textContent = t.showDiff;
+  }
+
+  openModal() {
+    this.resultsModal.classList.remove('hidden');
+  }
+
+  closeModal() {
+    this.resultsModal.classList.add('hidden');
+  }
+
+  async shareResult() {
+    if (!this.lastResult || !this.currentFlag) return;
+
+    const t = I18N[this.currentLang];
+    const tierProp = (this.diffApproach === 'popularity') ? 'popTier' : 'designTier';
+    const tierNum = this.currentFlag[tierProp];
+    const meta = this.tierMeta[this.diffApproach][tierNum];
+    const tierName = meta ? meta.shortName[this.currentLang] : `T${tierNum}`;
+
+    const shieldText = this.currentFlag.hasShield
+      ? (this.shieldMode === 'ignore' ? t.shieldOptional : t.shieldRequired)
+      : t.noShield;
+
+    const countryName = this.currentFlag.name[this.currentLang] || this.currentFlag.name.es;
+    const shareText = `FLAG DRAWER — ${countryName.toUpperCase()} (T${tierNum}: ${tierName})\nScore: ${this.lastResult.score}% (${this.lastResult.badge}) | ${shieldText}\nStreak: ${this.stats.streak} | Record: ${this.stats.best}%\n#FlagDrawer`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Flag Guess & Draw Result',
+          text: shareText
+        });
+        return;
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.warn('navigator.share falló:', err);
+        }
+      }
+    }
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(shareText);
+        this.showToast(t.copiedToast);
+      } else {
+        const tempInput = document.createElement('textarea');
+        tempInput.value = shareText;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        this.showToast(t.copiedToast);
+      }
+    } catch (err) {
+      this.showToast(t.copyFail);
+    }
+  }
+
+  showToast(message) {
+    if (this.toastTimeout) {
+      clearTimeout(this.toastTimeout);
+    }
+    this.toastEl.textContent = message;
+    this.toastEl.classList.remove('hidden');
+
+    this.toastTimeout = setTimeout(() => {
+      this.toastEl.classList.add('hidden');
+      this.toastTimeout = null;
+    }, 2400);
+  }
+}
+
+// Inicialización universal
+function startFlagGame() {
+  try {
+    window.flagGame = new FlagGame();
+  } catch (err) {
+    console.error('Fatal initialization error in FlagGame:', err);
+    const target = document.getElementById('country-target');
+    if (target) {
+      target.textContent = 'Error: ' + err.message;
+    }
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', startFlagGame);
+} else {
+  startFlagGame();
+}

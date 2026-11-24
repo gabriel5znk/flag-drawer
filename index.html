@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Flag Drawer — Swiss Edition</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header with Stats & Settings Button -->
+    <header class="app-header">
+      <div class="logo-area">
+        <svg class="logo-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+          <line x1="4" y1="22" x2="4" y2="15"></line>
+        </svg>
+        <h1 class="app-title" id="app-title">FLAG DRAWER</h1>
+      </div>
+
+      <div class="header-right">
+        <div class="stats-bar" role="region" aria-label="Estadísticas de juego">
+          <div class="stat-pill" title="Racha actual (puntajes ≥ 60%)">
+            <svg class="stat-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            <span class="stat-label" id="lbl-stat-streak">RACHA</span>
+            <span class="stat-value" id="stat-streak">0</span>
+          </div>
+          <div class="stat-pill" title="Puntuación más alta">
+            <svg class="stat-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+              <path d="M4 22h16"></path>
+              <path d="M10 14.66V17c0 .55-.45 1-1 1H8c-.55 0-1 .45-1 1v1c0 .55.45 1 1 1h8c.55 0 1-.45 1-1v-1c0-.55-.45-1-1-1h-1c-.55 0-1-.45-1-1v-2.34"></path>
+              <path d="M6 4h12a2 2 0 0 1 2 2v3a6 6 0 0 1-6 6h0a6 6 0 0 1-6-6V6a2 2 0 0 1 2-2z"></path>
+            </svg>
+            <span class="stat-label" id="lbl-stat-best">RÉCORD</span>
+            <span class="stat-value" id="stat-best">0%</span>
+          </div>
+          <div class="stat-pill" title="Banderas evaluadas">
+            <svg class="stat-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="12" r="6"></circle>
+              <circle cx="12" cy="12" r="2"></circle>
+            </svg>
+            <span class="stat-label" id="lbl-stat-played">JUGADAS</span>
+            <span class="stat-value" id="stat-played">0</span>
+          </div>
+        </div>
+
+        <button id="btn-settings" class="btn-settings-header" type="button" title="Configuraciones / Settings" aria-label="Abrir configuración">
+          <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Multi-Select Difficulty Filter Bar -->
+    <section class="game-controls-bar">
+      <div class="control-box full-width">
+        <div class="control-header-row">
+          <div class="label-with-mode">
+            <label class="control-label" id="lbl-difficulty">Dificultad</label>
+            <span id="active-approach-tag" class="approach-tag" title="Clic para configurar criterio">Fama</span>
+          </div>
+          <span id="tier-counter-badge" class="tier-counter-badge">143 banderas</span>
+        </div>
+        <!-- Selector múltiple de niveles de dificultad -->
+        <div class="tier-chips-group" role="group" aria-label="Niveles de dificultad">
+          <button id="chip-all" class="tier-chip active" type="button" data-tier="all">
+            <span id="txt-chip-all">Todas</span>
+          </button>
+          <button class="tier-chip active" type="button" data-tier="1" id="chip-1" title="Tier 1">
+            <span class="chip-dot dot-1"></span>
+            <span class="chip-label" id="txt-chip-1">T1: Famosas</span>
+          </button>
+          <button class="tier-chip active" type="button" data-tier="2" id="chip-2" title="Tier 2">
+            <span class="chip-dot dot-2"></span>
+            <span class="chip-label" id="txt-chip-2">T2: Conocidas</span>
+          </button>
+          <button class="tier-chip active" type="button" data-tier="3" id="chip-3" title="Tier 3">
+            <span class="chip-dot dot-3"></span>
+            <span class="chip-label" id="txt-chip-3">T3: Menos comunes</span>
+          </button>
+          <button class="tier-chip active" type="button" data-tier="4" id="chip-4" title="Tier 4">
+            <span class="chip-dot dot-4"></span>
+            <span class="chip-label" id="txt-chip-4">T4: Micronaciones</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Challenge Prompt Card -->
+    <section class="prompt-section">
+      <div class="prompt-card">
+        <div class="prompt-meta">
+          <span class="prompt-subtitle" id="lbl-draw-prompt">Dibuja la bandera de</span>
+          <span id="target-tier-badge" class="tier-pill tier-1">Tier 1</span>
+          <span id="target-shield-badge" class="shield-pill hidden">
+            <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            <span id="target-shield-text">Escudo opcional</span>
+          </span>
+        </div>
+        <h2 class="country-target" id="country-target">Cargando...</h2>
+      </div>
+      <button id="skip-btn" class="btn btn-secondary skip-btn" title="Obtener otro país al azar">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polygon points="5 4 15 12 5 20 5 4"></polygon>
+          <line x1="19" y1="5" x2="19" y2="19"></line>
+        </svg>
+        <span id="lbl-skip-btn">Saltar</span>
+      </button>
+    </section>
+
+    <!-- Canvas Workspace -->
+    <main class="canvas-workspace">
+      <div class="canvas-wrapper">
+        <canvas id="drawing-canvas" width="300" height="200" aria-label="Lienzo de dibujo"></canvas>
+        <canvas id="overlay-canvas" width="300" height="200" aria-hidden="true"></canvas>
+      </div>
+
+      <!-- Drawing Controls Toolbar -->
+      <div class="toolbar-container">
+        <!-- Tools row -->
+        <div class="tools-group" role="toolbar" aria-label="Herramientas de dibujo">
+          <!-- Brush Tool -->
+          <button id="tool-brush" class="tool-btn active" data-tool="brush" title="Pincel libre">
+            <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18.375 2.625a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.375-9.375z"></path>
+              <path d="M7 16l-3.5 3.5a2.121 2.121 0 0 0 3 3L10 19"></path>
+            </svg>
+            <span class="tool-name" id="tool-name-brush">Pincel</span>
+          </button>
+
+          <!-- Line Tool -->
+          <button id="tool-line" class="tool-btn" data-tool="line" title="Línea recta">
+            <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="4" y1="20" x2="20" y2="4"></line>
+              <circle cx="4" cy="20" r="1.5" fill="currentColor"></circle>
+              <circle cx="20" cy="4" r="1.5" fill="currentColor"></circle>
+            </svg>
+            <span class="tool-name" id="tool-name-line">Línea</span>
+          </button>
+          
+          <!-- Flood Fill Tool -->
+          <button id="tool-fill" class="tool-btn" data-tool="fill" title="Cubo de pintura">
+            <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z"></path>
+              <path d="m5 2 5 5"></path>
+              <path d="M2 13h15"></path>
+              <path d="M22 20a2 2 0 1 1-4 0c0-1.6 1.7-2.7 2-4 .3 1.3 2 2.4 2 4Z"></path>
+            </svg>
+            <span class="tool-name" id="tool-name-fill">Relleno</span>
+          </button>
+
+          <!-- Rectangle Tool -->
+          <button id="tool-rect" class="tool-btn" data-tool="rectangle" title="Rectángulo">
+            <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+            </svg>
+            <span class="tool-name" id="tool-name-rect">Rect</span>
+          </button>
+
+          <!-- Circle Tool -->
+          <button id="tool-circle" class="tool-btn" data-tool="circle" title="Círculo/Óvalo">
+            <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"></circle>
+            </svg>
+            <span class="tool-name" id="tool-name-circle">Círculo</span>
+          </button>
+
+          <!-- Mirror Symmetry Tool -->
+          <button id="tool-mirror" class="tool-btn mirror-btn" type="button" title="Modo espejo (Alterna Off/V/H)">
+            <svg id="mirror-icon" class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="2" x2="12" y2="22" stroke-dasharray="3 3"></line>
+              <path d="M7 6l-4 6 4 6"></path>
+              <path d="M17 6l4 6-4 6"></path>
+            </svg>
+            <span class="tool-name" id="tool-name-mirror">Espejo</span>
+            <span id="mirror-badge" class="mirror-indicator">Off</span>
+          </button>
+
+          <div class="tool-separator"></div>
+
+          <!-- Undo Button -->
+          <button id="btn-undo" class="tool-btn" title="Deshacer trazo (Ctrl+Z)" disabled>
+            <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 7v6h6"></path>
+              <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
+            </svg>
+            <span class="tool-name" id="tool-name-undo">Deshacer</span>
+          </button>
+
+          <!-- Clear Button -->
+          <button id="btn-clear" class="tool-btn btn-danger-subtle" title="Limpiar lienzo a blanco">
+            <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span class="tool-name" id="tool-name-clear">Limpiar</span>
+          </button>
+        </div>
+
+        <!-- Slider & Brush preview -->
+        <div class="slider-row">
+          <label for="brush-size" class="slider-label" id="lbl-thickness">Grosor</label>
+          <input type="range" id="brush-size" min="2" max="40" value="10" class="slider-input">
+          <div class="brush-preview-wrap" title="Grosor actual">
+            <span id="brush-size-val">10px</span>
+            <div id="brush-dot" class="brush-dot"></div>
+          </div>
+        </div>
+
+        <!-- Extended Palette -->
+        <div class="palette-container" aria-label="Paleta de colores">
+          <!-- Fila 1: Básicos / Primarios -->
+          <div class="palette-row" role="radiogroup" aria-label="Colores Básicos">
+            <button class="color-swatch" data-color="#FFFFFF" style="--swatch-color: #FFFFFF;" title="Blanco"></button>
+            <button class="color-swatch" data-color="#000000" style="--swatch-color: #000000;" title="Negro"></button>
+            <button class="color-swatch" data-color="#808080" style="--swatch-color: #808080;" title="Gris neutro"></button>
+            <button class="color-swatch active" data-color="#CE1126" style="--swatch-color: #CE1126;" title="Rojo carmesí"></button>
+            <button class="color-swatch" data-color="#002654" style="--swatch-color: #002654;" title="Azul marino"></button>
+            <button class="color-swatch" data-color="#75AADB" style="--swatch-color: #75AADB;" title="Azul cielo"></button>
+            <button class="color-swatch" data-color="#009A44" style="--swatch-color: #009A44;" title="Verde bandera"></button>
+            <button class="color-swatch" data-color="#4ADE80" style="--swatch-color: #4ADE80;" title="Verde claro"></button>
+          </div>
+
+          <!-- Fila 2: Complementarios + Celda Activa + Círculo Cromático -->
+          <div class="palette-row" role="radiogroup" aria-label="Colores Complementarios">
+            <button class="color-swatch" data-color="#FFD100" style="--swatch-color: #FFD100;" title="Amarillo oro"></button>
+            <button class="color-swatch" data-color="#FF7900" style="--swatch-color: #FF7900;" title="Naranja"></button>
+            <button class="color-swatch" data-color="#78350F" style="--swatch-color: #78350F;" title="Marrón"></button>
+            <button class="color-swatch" data-color="#C29B38" style="--swatch-color: #C29B38;" title="Dorado"></button>
+            <button class="color-swatch" data-color="#8A1538" style="--swatch-color: #8A1538;" title="Vino / Granate"></button>
+            <button class="color-swatch" data-color="#00A3E0" style="--swatch-color: #00A3E0;" title="Cian"></button>
+            <button class="color-swatch" data-color="#7E22CE" style="--swatch-color: #7E22CE;" title="Púrpura / Morado"></button>
+            
+            <!-- Celda de Color Activo / Personalizado -->
+            <div id="active-color-swatch" class="color-swatch active-preview" title="Color activo" style="--swatch-color: #CE1126;">
+              <span class="active-dot"></span>
+            </div>
+
+            <!-- Botón con Círculo Cromático -->
+            <button id="color-wheel-btn" class="color-wheel-btn" type="button" title="Selector de color personalizado">
+              <svg class="wheel-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle>
+                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle>
+                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle>
+                <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle>
+                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path>
+              </svg>
+              <input type="color" id="custom-color-picker" value="#CE1126" class="sr-only-picker" aria-label="Selector de color personalizado">
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit CTA button -->
+      <div class="submit-action-area">
+        <button id="submit-btn" class="btn btn-primary submit-btn">
+          <span id="lbl-submit-btn">Evaluar Bandera</span>
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </button>
+      </div>
+    </main>
+
+    <!-- Results Modal Overlay -->
+    <div id="results-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-score">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-meta-row">
+            <span id="modal-country-name" class="modal-country-title">Francia</span>
+            <span id="modal-tier-badge" class="tier-pill tier-1">Tier 1</span>
+            <span id="modal-shield-badge" class="shield-pill">
+              <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              <span>Sin escudo</span>
+            </span>
+          </div>
+          <div class="grade-badge" id="grade-badge">Grade S</div>
+          <h2 class="modal-title" id="modal-score">85%</h2>
+          <p class="modal-feedback" id="modal-feedback">Clearly recognisable, one element is off.</p>
+        </div>
+
+        <!-- Comparative Side-by-Side View -->
+        <div class="comparison-grid">
+          <div class="comparison-box">
+            <span class="box-tag" id="lbl-your-drawing">Tu dibujo</span>
+            <div class="frame">
+              <canvas id="result-user-canvas" width="300" height="200"></canvas>
+            </div>
+          </div>
+          <div class="comparison-box">
+            <span class="box-tag" id="lbl-real-flag">Bandera real</span>
+            <div class="frame">
+              <canvas id="result-target-canvas" width="300" height="200"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Diff view toggle -->
+        <div class="diff-toggle-row">
+          <button id="toggle-diff-btn" class="btn btn-subtle text-xs">
+            Ver diferencias
+          </button>
+          <div id="diff-view-container" class="diff-container hidden">
+            <span class="box-tag">Mapa de calor (Verde = acierto, Rojo = fallo)</span>
+            <div class="frame">
+              <canvas id="result-diff-canvas" width="300" height="200"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats row inside modal -->
+        <div class="modal-stats-bar">
+          <div class="modal-stat">
+            <span class="modal-stat-label" id="lbl-modal-streak">RACHA</span>
+            <span class="modal-stat-val" id="modal-stat-streak">0</span>
+          </div>
+          <div class="modal-stat">
+            <span class="modal-stat-label" id="lbl-modal-best">RÉCORD</span>
+            <span class="modal-stat-val" id="modal-stat-best">0%</span>
+          </div>
+          <div class="modal-stat">
+            <span class="modal-stat-label" id="lbl-modal-played">JUGADAS</span>
+            <span class="modal-stat-val" id="modal-stat-played">0</span>
+          </div>
+        </div>
+
+        <!-- Modal Actions -->
+        <div class="modal-actions">
+          <button id="share-btn" class="btn btn-secondary flex-1">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+            <span id="share-text">Compartir</span>
+          </button>
+          <button id="next-flag-btn" class="btn btn-primary flex-1">
+            <span id="lbl-next-flag">Siguiente bandera</span>
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="modal-card settings-card">
+        <div class="settings-header">
+          <div class="settings-title-group">
+            <svg class="settings-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <h2 id="settings-title" class="settings-title">Configuración</h2>
+          </div>
+          <button id="btn-close-settings" class="btn-close" aria-label="Cerrar configuración">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div class="settings-body">
+          <!-- 1. Criterio de Dificultad -->
+          <div class="setting-item">
+            <div class="setting-title-row">
+              <span class="setting-title" id="lbl-diff-approach">Criterio de Dificultad</span>
+            </div>
+            <p class="setting-desc" id="desc-diff-approach">Define cómo se clasifican los 4 niveles de dificultad.</p>
+            <div class="segmented-control" role="radiogroup">
+              <button id="btn-approach-pop" class="segment-btn active" type="button" data-approach="popularity">
+                <svg class="segment-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+                <span id="lbl-pop-approach">Por Fama</span>
+              </button>
+              <button id="btn-approach-design" class="segment-btn" type="button" data-approach="design">
+                <svg class="segment-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                <span id="lbl-design-approach">Por Complejidad</span>
+              </button>
+            </div>
+            <div class="approach-explanation" id="approach-explanation">
+              Modo Fama: Banderas de países más conocidos (EE. UU., Brasil, Francia) son Tier 1, sin importar su complejidad de diseño.
+            </div>
+          </div>
+
+          <!-- 2. Idioma -->
+          <div class="setting-item">
+            <span class="setting-title" id="lbl-language">Idioma / Language</span>
+            <div class="segmented-control" role="radiogroup">
+              <button id="btn-lang-es" class="segment-btn active" type="button" data-lang="es">
+                <span class="lang-tag">ES</span>
+                <span>Español</span>
+              </button>
+              <button id="btn-lang-en" class="segment-btn" type="button" data-lang="en">
+                <span class="lang-tag">EN</span>
+                <span>English</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 3. Tema Visual -->
+          <div class="setting-item">
+            <span class="setting-title" id="lbl-theme">Tema Visual / Theme</span>
+            <div class="segmented-control" role="radiogroup">
+              <button id="btn-theme-dark" class="segment-btn active" type="button" data-theme="dark">
+                <svg class="segment-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+                <span id="txt-theme-dark">Oscuro</span>
+              </button>
+              <button id="btn-theme-light" class="segment-btn" type="button" data-theme="light">
+                <svg class="segment-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="5"></circle>
+                  <line x1="12" y1="1" x2="12" y2="3"></line>
+                  <line x1="12" y1="21" x2="12" y2="23"></line>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                  <line x1="1" y1="12" x2="3" y2="12"></line>
+                  <line x1="21" y1="12" x2="23" y2="12"></line>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <span id="txt-theme-light">Claro</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 4. Modo Escudos -->
+          <div class="setting-item">
+            <span class="setting-title" id="lbl-shield-setting">Evaluación de Escudos</span>
+            <p class="setting-desc" id="desc-shield-setting">Perdonar o exigir escudos e insignias heráldicas complejas.</p>
+            <div class="segmented-control" role="radiogroup">
+              <button id="btn-shield-ignore" class="segment-btn active" type="button" data-shield="ignore">
+                <svg class="segment-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                <span id="txt-shield-ignore">Perdonar (Casual)</span>
+              </button>
+              <button id="btn-shield-require" class="segment-btn" type="button" data-shield="require">
+                <svg class="segment-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="22" y1="12" x2="18" y2="12"></line>
+                  <line x1="6" y1="12" x2="2" y2="12"></line>
+                  <line x1="12" y1="6" x2="12" y2="2"></line>
+                  <line x1="12" y1="22" x2="12" y2="18"></line>
+                </svg>
+                <span id="txt-shield-require">Exigir (Experto)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-footer">
+          <button id="btn-save-settings" class="btn btn-primary full-width">
+            <span id="lbl-save-settings">Guardar y Continuar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification for Share / Info -->
+    <div id="toast" class="toast hidden">Copiado al portapapeles</div>
+  </div>
+
+  <!-- Script principal empaquetado para compatibilidad universal -->
+  <script src="js/bundle.js"></script>
+</body>
+</html>

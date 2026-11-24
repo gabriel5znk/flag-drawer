@@ -1,0 +1,491 @@
+/**
+ * Motor de dibujo (Canvas)
+ * Soporta Pincel, Línea Recta, Relleno por inundación (Flood Fill), Rectángulo, Círculo,
+ * Modo Espejo (Simetría Vertical/Horizontal), Deshacer y Limpiar.
+ * Optimizado para PointerEvents (ratón y táctil mobile-first).
+ */
+
+export class CanvasManager {
+  constructor(canvasElement, options = {}) {
+    this.canvas = canvasElement;
+    this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
+
+    this.width = options.width || 300;
+    this.height = options.height || 200;
+    this.canvas.width = this.width;
+    this.canvas.height = this.height;
+
+    // Overlay opcional para guías (Modo Espejo)
+    this.overlayCanvas = options.overlayCanvas || null;
+    this.overlayCtx = this.overlayCanvas ? this.overlayCanvas.getContext('2d') : null;
+    if (this.overlayCanvas) {
+      this.overlayCanvas.width = this.width;
+      this.overlayCanvas.height = this.height;
+    }
+
+    // Configuración inicial de herramientas
+    this.currentTool = 'brush'; // 'brush' | 'line' | 'fill' | 'rectangle' | 'circle'
+    this.isLineToolActive = false;
+    this.mirrorMode = null; // null | 'vertical' | 'horizontal'
+    this.currentColor = '#CE1126'; // Rojo carmesí por defecto
+    this.brushSize = 10;
+    this.shapeMode = 'fill';
+
+    // Historial para Undo (Límite de 25 estados)
+    this.undoStack = [];
+    this.maxUndo = 25;
+
+    // Estado del cursor/puntero
+    this.isDrawing = false;
+    this.lastX = 0;
+    this.lastY = 0;
+    this.startX = 0;
+    this.startY = 0;
+    this.dragSnapshot = null;
+
+    // Callbacks
+    this.onStateChange = options.onStateChange || null;
+
+    this.initCanvas();
+    this.attachEvents();
+  }
+
+  initCanvas() {
+    // Fondo blanco normalizado
+    this.ctx.fillStyle = '#FFFFFF';
+    this.ctx.fillRect(0, 0, this.width, this.height);
+    this.saveState();
+    this.renderMirrorGuide();
+  }
+
+  saveState() {
+    try {
+      const state = this.ctx.getImageData(0, 0, this.width, this.height);
+      this.undoStack.push(state);
+      if (this.undoStack.length > this.maxUndo) {
+        this.undoStack.shift();
+      }
+      this.notifyStateChange();
+    } catch (e) {
+      console.warn('No se pudo guardar el estado de deshacer:', e);
+    }
+  }
+
+  undo() {
+    if (this.undoStack.length > 1) {
+      this.undoStack.pop(); // Quitar estado actual
+      const prevState = this.undoStack[this.undoStack.length - 1];
+      this.ctx.putImageData(prevState, 0, 0);
+      this.notifyStateChange();
+      return true;
+    }
+    return false;
+  }
+
+  canUndo() {
+    return this.undoStack.length > 1;
+  }
+
+  clear() {
+    this.ctx.fillStyle = '#FFFFFF';
+    this.ctx.fillRect(0, 0, this.width, this.height);
+    this.saveState();
+  }
+
+  setTool(tool) {
+    this.currentTool = tool;
+    this.isLineToolActive = (tool === 'line');
+    this.notifyStateChange();
+  }
+
+  setColor(color) {
+    this.currentColor = color;
+    this.notifyStateChange();
+  }
+
+  setSize(size) {
+    this.brushSize = Math.max(2, Math.min(40, size));
+    this.notifyStateChange();
+  }
+
+  /**
+   * Alterna cíclicamente el Modo Espejo: Off -> Vertical -> Horizontal -> Off
+   */
+  cycleMirrorMode() {
+    if (this.mirrorMode === null) {
+      this.setMirrorMode('vertical');
+    } else if (this.mirrorMode === 'vertical') {
+      this.setMirrorMode('horizontal');
+    } else {
+      this.setMirrorMode(null);
+    }
+    return this.mirrorMode;
+  }
+
+  setMirrorMode(mode) {
+    this.mirrorMode = mode;
+    this.renderMirrorGuide();
+    this.notifyStateChange();
+  }
+
+  /**
+   * Lógica Matemática de Reflejo:
+   * Eje Vertical (Reflejo en X): x' = width - 1 - x, y' = y
+   * Eje Horizontal (Reflejo en Y): x' = x, y' = height - 1 - y
+   */
+  applySymmetry(x, y) {
+    if (this.mirrorMode === 'vertical') {
+      return { x: this.width - 1 - x, y };
+    } else if (this.mirrorMode === 'horizontal') {
+      return { x, y: this.height - 1 - y };
+    }
+    return null;
+  }
+
+  /**
+   * Dibuja o limpia la línea guía punteada del modo espejo en el canvas overlay
+   */
+  renderMirrorGuide() {
+    if (!this.overlayCtx) return;
+    this.overlayCtx.clearRect(0, 0, this.width, this.height);
+
+    if (!this.mirrorMode) return;
+
+    this.overlayCtx.save();
+    this.overlayCtx.setLineDash([4, 4]);
+    this.overlayCtx.lineWidth = 1.5;
+    this.overlayCtx.strokeStyle = 'rgba(59, 130, 246, 0.75)';
+
+    if (this.mirrorMode === 'vertical') {
+      const midX = Math.floor(this.width / 2);
+      this.overlayCtx.beginPath();
+      this.overlayCtx.moveTo(midX, 0);
+      this.overlayCtx.lineTo(midX, this.height);
+      this.overlayCtx.stroke();
+    } else if (this.mirrorMode === 'horizontal') {
+      const midY = Math.floor(this.height / 2);
+      this.overlayCtx.beginPath();
+      this.overlayCtx.moveTo(0, midY);
+      this.overlayCtx.lineTo(this.width, midY);
+      this.overlayCtx.stroke();
+    }
+
+    this.overlayCtx.restore();
+  }
+
+  notifyStateChange() {
+    if (typeof this.onStateChange === 'function') {
+      this.onStateChange({
+        canUndo: this.canUndo(),
+        tool: this.currentTool,
+        color: this.currentColor,
+        size: this.brushSize,
+        mirrorMode: this.mirrorMode,
+        isLineToolActive: this.isLineToolActive
+      });
+    }
+  }
+
+  getCanvasCoords(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.width / rect.width;
+    const scaleY = this.height / rect.height;
+
+    return {
+      x: Math.round((e.clientX - rect.left) * scaleX),
+      y: Math.round((e.clientY - rect.top) * scaleY)
+    };
+  }
+
+  attachEvents() {
+    this.canvas.addEventListener('pointerdown', (e) => this.handlePointerDown(e));
+    this.canvas.addEventListener('pointermove', (e) => this.handlePointerMove(e));
+    this.canvas.addEventListener('pointerup', (e) => this.handlePointerUp(e));
+    this.canvas.addEventListener('pointercancel', (e) => this.handlePointerUp(e));
+    this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  }
+
+  handlePointerDown(e) {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    try {
+      this.canvas.setPointerCapture(e.pointerId);
+    } catch (_) {}
+
+    const coords = this.getCanvasCoords(e);
+    this.isDrawing = true;
+    this.startX = coords.x;
+    this.startY = coords.y;
+    this.lastX = coords.x;
+    this.lastY = coords.y;
+
+    if (this.currentTool === 'fill') {
+      this.floodFill(coords.x, coords.y, this.currentColor);
+      // Relleno simétrico si está activo el modo espejo
+      if (this.mirrorMode) {
+        const sym = this.applySymmetry(coords.x, coords.y);
+        if (sym) {
+          this.floodFill(sym.x, sym.y, this.currentColor);
+        }
+      }
+      this.saveState();
+      this.isDrawing = false;
+    } else if (this.currentTool === 'brush') {
+      // Punto inicial principal
+      this.drawDot(coords.x, coords.y);
+      // Punto inicial simétrico
+      if (this.mirrorMode) {
+        const sym = this.applySymmetry(coords.x, coords.y);
+        if (sym) {
+          this.drawDot(sym.x, sym.y);
+        }
+      }
+    } else if (
+      this.currentTool === 'line' ||
+      this.currentTool === 'rectangle' ||
+      this.currentTool === 'circle'
+    ) {
+      // Capturar imagen para vista previa mientras arrastra
+      this.dragSnapshot = this.ctx.getImageData(0, 0, this.width, this.height);
+    }
+  }
+
+  handlePointerMove(e) {
+    if (!this.isDrawing) return;
+    const coords = this.getCanvasCoords(e);
+
+    if (this.currentTool === 'brush') {
+      // Trazo principal
+      this.drawLine(this.lastX, this.lastY, coords.x, coords.y);
+
+      // Trazo reflejado
+      if (this.mirrorMode) {
+        const s0 = this.applySymmetry(this.lastX, this.lastY);
+        const s1 = this.applySymmetry(coords.x, coords.y);
+        if (s0 && s1) {
+          this.drawLine(s0.x, s0.y, s1.x, s1.y);
+        }
+      }
+
+      this.lastX = coords.x;
+      this.lastY = coords.y;
+    } else if (this.currentTool === 'line') {
+      if (this.dragSnapshot) {
+        this.ctx.putImageData(this.dragSnapshot, 0, 0);
+        this.drawLine(this.startX, this.startY, coords.x, coords.y);
+
+        if (this.mirrorMode) {
+          const s0 = this.applySymmetry(this.startX, this.startY);
+          const s1 = this.applySymmetry(coords.x, coords.y);
+          if (s0 && s1) {
+            this.drawLine(s0.x, s0.y, s1.x, s1.y);
+          }
+        }
+      }
+    } else if (this.currentTool === 'rectangle') {
+      if (this.dragSnapshot) {
+        this.ctx.putImageData(this.dragSnapshot, 0, 0);
+        this.drawRectangle(this.startX, this.startY, coords.x, coords.y);
+
+        if (this.mirrorMode) {
+          const s0 = this.applySymmetry(this.startX, this.startY);
+          const s1 = this.applySymmetry(coords.x, coords.y);
+          if (s0 && s1) {
+            this.drawRectangle(s0.x, s0.y, s1.x, s1.y);
+          }
+        }
+      }
+    } else if (this.currentTool === 'circle') {
+      if (this.dragSnapshot) {
+        this.ctx.putImageData(this.dragSnapshot, 0, 0);
+        this.drawCircle(this.startX, this.startY, coords.x, coords.y);
+
+        if (this.mirrorMode) {
+          const s0 = this.applySymmetry(this.startX, this.startY);
+          const s1 = this.applySymmetry(coords.x, coords.y);
+          if (s0 && s1) {
+            this.drawCircle(s0.x, s0.y, s1.x, s1.y);
+          }
+        }
+      }
+    }
+  }
+
+  handlePointerUp(e) {
+    if (!this.isDrawing) return;
+    this.isDrawing = false;
+    try {
+      this.canvas.releasePointerCapture(e.pointerId);
+    } catch (_) {}
+
+    const coords = this.getCanvasCoords(e);
+
+    if (this.currentTool === 'line') {
+      if (this.dragSnapshot) {
+        this.ctx.putImageData(this.dragSnapshot, 0, 0);
+        this.drawLine(this.startX, this.startY, coords.x, coords.y);
+
+        if (this.mirrorMode) {
+          const s0 = this.applySymmetry(this.startX, this.startY);
+          const s1 = this.applySymmetry(coords.x, coords.y);
+          if (s0 && s1) {
+            this.drawLine(s0.x, s0.y, s1.x, s1.y);
+          }
+        }
+        this.dragSnapshot = null;
+        this.saveState();
+      }
+    } else if (this.currentTool === 'rectangle') {
+      if (this.dragSnapshot) {
+        this.ctx.putImageData(this.dragSnapshot, 0, 0);
+        this.drawRectangle(this.startX, this.startY, coords.x, coords.y);
+
+        if (this.mirrorMode) {
+          const s0 = this.applySymmetry(this.startX, this.startY);
+          const s1 = this.applySymmetry(coords.x, coords.y);
+          if (s0 && s1) {
+            this.drawRectangle(s0.x, s0.y, s1.x, s1.y);
+          }
+        }
+        this.dragSnapshot = null;
+        this.saveState();
+      }
+    } else if (this.currentTool === 'circle') {
+      if (this.dragSnapshot) {
+        this.ctx.putImageData(this.dragSnapshot, 0, 0);
+        this.drawCircle(this.startX, this.startY, coords.x, coords.y);
+
+        if (this.mirrorMode) {
+          const s0 = this.applySymmetry(this.startX, this.startY);
+          const s1 = this.applySymmetry(coords.x, coords.y);
+          if (s0 && s1) {
+            this.drawCircle(s0.x, s0.y, s1.x, s1.y);
+          }
+        }
+        this.dragSnapshot = null;
+        this.saveState();
+      }
+    } else if (this.currentTool === 'brush') {
+      this.saveState();
+    }
+  }
+
+  drawDot(x, y) {
+    this.ctx.beginPath();
+    this.ctx.fillStyle = this.currentColor;
+    this.ctx.arc(x, y, this.brushSize / 2, 0, Math.PI * 2);
+    this.ctx.fill();
+  }
+
+  drawLine(x1, y1, x2, y2) {
+    this.ctx.beginPath();
+    this.ctx.strokeStyle = this.currentColor;
+    this.ctx.lineWidth = this.brushSize;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+    this.ctx.moveTo(x1, y1);
+    this.ctx.lineTo(x2, y2);
+    this.ctx.stroke();
+  }
+
+  drawRectangle(x1, y1, x2, y2) {
+    const rx = Math.min(x1, x2);
+    const ry = Math.min(y1, y2);
+    const rw = Math.abs(x2 - x1);
+    const rh = Math.abs(y2 - y1);
+
+    this.ctx.fillStyle = this.currentColor;
+    this.ctx.fillRect(rx, ry, rw, rh);
+  }
+
+  drawCircle(x1, y1, x2, y2) {
+    const rx = Math.abs(x2 - x1) / 2;
+    const ry = Math.abs(y2 - y1) / 2;
+    const cx = Math.min(x1, x2) + rx;
+    const cy = Math.min(y1, y2) + ry;
+
+    if (rx <= 0 || ry <= 0) return;
+
+    this.ctx.beginPath();
+    this.ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+    this.ctx.fillStyle = this.currentColor;
+    this.ctx.fill();
+  }
+
+  hexToRgba(hex) {
+    let c = hex.replace('#', '');
+    if (c.length === 3) {
+      c = c.split('').map((char) => char + char).join('');
+    }
+    const num = parseInt(c, 16);
+    return {
+      r: (num >> 16) & 255,
+      g: (num >> 8) & 255,
+      b: num & 255,
+      a: 255
+    };
+  }
+
+  /**
+   * Algoritmo iterativo de Flood Fill (relleno por inundación)
+   * con tolerancia de color para antialiasing de trazos.
+   */
+  floodFill(startX, startY, hexColor, tolerance = 32) {
+    if (startX < 0 || startX >= this.width || startY < 0 || startY >= this.height) return;
+
+    const imgData = this.ctx.getImageData(0, 0, this.width, this.height);
+    const data = imgData.data;
+
+    const targetIdx = (startY * this.width + startX) * 4;
+    const tr = data[targetIdx];
+    const tg = data[targetIdx + 1];
+    const tb = data[targetIdx + 2];
+    const ta = data[targetIdx + 3];
+
+    const fill = this.hexToRgba(hexColor);
+
+    // Evitar bucle si ya es el mismo color
+    const initDiffSq = (tr - fill.r) ** 2 + (tg - fill.g) ** 2 + (tb - fill.b) ** 2;
+    if (initDiffSq <= 9 && Math.abs(ta - fill.a) < 5) return;
+
+    const tolSq = tolerance * tolerance;
+    const visited = new Uint8Array(this.width * this.height);
+    const stack = [startX, startY];
+
+    while (stack.length > 0) {
+      const y = stack.pop();
+      const x = stack.pop();
+      const pos = y * this.width + x;
+
+      if (visited[pos]) continue;
+      visited[pos] = 1;
+
+      const idx = pos * 4;
+      const dr = data[idx] - tr;
+      const dg = data[idx + 1] - tg;
+      const db = data[idx + 2] - tb;
+      const diffSq = dr * dr + dg * dg + db * db;
+
+      if (diffSq <= tolSq) {
+        data[idx] = fill.r;
+        data[idx + 1] = fill.g;
+        data[idx + 2] = fill.b;
+        data[idx + 3] = fill.a;
+
+        if (x > 0 && !visited[pos - 1]) {
+          stack.push(x - 1, y);
+        }
+        if (x < this.width - 1 && !visited[pos + 1]) {
+          stack.push(x + 1, y);
+        }
+        if (y > 0 && !visited[pos - this.width]) {
+          stack.push(x, y - 1);
+        }
+        if (y < this.height - 1 && !visited[pos + this.width]) {
+          stack.push(x, y + 1);
+        }
+      }
+    }
+
+    this.ctx.putImageData(imgData, 0, 0);
+  }
+}
