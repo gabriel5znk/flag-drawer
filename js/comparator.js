@@ -142,10 +142,13 @@ export function compareCanvases(userCanvas, targetCanvas, options = {}) {
   let sX1 = 0, sX2 = 0, sY1 = 0, sY2 = 0;
   if (ignoreShield && shield && shield.x && shield.y && shield.fill) {
     shieldFillRgb = hexToRgb(shield.fill);
-    sX1 = shield.x[0];
-    sX2 = shield.x[1];
-    sY1 = shield.y[0];
-    sY2 = shield.y[1];
+    // Escalar coordenadas del escudo si la resolución difiere de la base 300x200
+    const scaleX = width / 300;
+    const scaleY = height / 200;
+    sX1 = Math.round(shield.x[0] * scaleX);
+    sX2 = Math.round(shield.x[1] * scaleX);
+    sY1 = Math.round(shield.y[0] * scaleY);
+    sY2 = Math.round(shield.y[1] * scaleY);
   }
 
   // Canvas para visualizar las diferencias (Diff map)

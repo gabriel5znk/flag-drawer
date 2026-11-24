@@ -50,6 +50,26 @@ export class CanvasManager {
     this.attachEvents();
   }
 
+  setDimensions(width, height) {
+    if (this.width === width && this.height === height) {
+      this.clear();
+      return;
+    }
+    this.width = width;
+    this.height = height;
+    this.canvas.width = width;
+    this.canvas.height = height;
+
+    if (this.overlayCanvas) {
+      this.overlayCanvas.width = width;
+      this.overlayCanvas.height = height;
+    }
+
+    this.undoStack = [];
+    this.initCanvas();
+    this.notifyStateChange();
+  }
+
   initCanvas() {
     // Fondo blanco normalizado
     this.ctx.fillStyle = '#FFFFFF';

@@ -188,11 +188,13 @@ class FlagGame {
     this.lblDrawPrompt = document.getElementById('lbl-draw-prompt');
     this.countryTargetEl = document.getElementById('country-target');
     this.targetTierBadge = document.getElementById('target-tier-badge');
+    this.targetRatioBadge = document.getElementById('target-ratio-badge');
     this.targetShieldBadge = document.getElementById('target-shield-badge');
     this.skipBtn = document.getElementById('skip-btn');
     this.lblSkipBtn = document.getElementById('lbl-skip-btn');
 
     // Canvas principal y overlay
+    this.canvasWrapper = document.querySelector('.canvas-wrapper');
     this.drawingCanvas = document.getElementById('drawing-canvas');
     this.overlayCanvas = document.getElementById('overlay-canvas');
 
@@ -234,6 +236,7 @@ class FlagGame {
     this.resultsModal = document.getElementById('results-modal');
     this.modalCountryName = document.getElementById('modal-country-name');
     this.modalTierBadge = document.getElementById('modal-tier-badge');
+    this.modalRatioBadge = document.getElementById('modal-ratio-badge');
     this.modalShieldBadge = document.getElementById('modal-shield-badge');
     this.gradeBadgeEl = document.getElementById('grade-badge');
     this.modalScoreEl = document.getElementById('modal-score');
@@ -564,6 +567,16 @@ class FlagGame {
     }
   }
 
+  getDimensionsForRatio(ratio) {
+    const r = ratio || 1.5;
+    const baseArea = 60000;
+    let height = Math.round(Math.sqrt(baseArea / r));
+    let width = Math.round(height * r);
+    if (width % 2 !== 0) width += 1;
+    if (height % 2 !== 0) height += 1;
+    return { width, height };
+  }
+
   pickNextFlag() {
     const available = this.getFilteredFlags();
     if (available.length === 0) return;
@@ -588,11 +601,29 @@ class FlagGame {
     this.targetTierBadge.textContent = `T${tierNum}: ${shortName}`;
     this.targetTierBadge.className = `tier-pill tier-${tierNum}`;
 
+    // Adaptar dimensiones y proporción de aspecto al país actual
+    const { width, height } = this.getDimensionsForRatio(this.currentFlag.ratio);
+    this.canvasManager.setDimensions(width, height);
+
+    if (this.canvasWrapper) {
+      this.canvasWrapper.style.setProperty('--flag-aspect-ratio', `${width} / ${height}`);
+      this.canvasWrapper.style.setProperty('--flag-aspect-num', `${this.currentFlag.ratio || 1.5}`);
+    }
+
+    if (this.targetRatioBadge) {
+      this.targetRatioBadge.textContent = this.currentFlag.aspectText || `${(this.currentFlag.ratio || 1.5).toFixed(2)}:1`;
+      this.targetRatioBadge.title = `Proporción: ${this.currentFlag.aspectText || this.currentFlag.ratio}`;
+    }
+
     // Actualizar badge de escudo
     this.updateFlagShieldBadge();
+  }
 
-    // Limpiar canvas
-    this.canvasManager.clear();
+  selectTool(tool) {
+    this.canvasManager.setTool(tool);
+    this.toolButtons.forEach((b) => {
+      b.classList.toggle('active', b.dataset.tool === tool);
+    });
   }
 
   attachEventListeners() {
@@ -667,10 +698,7 @@ class FlagGame {
     this.toolButtons.forEach((btn) => {
       btn.addEventListener('click', () => {
         const tool = btn.dataset.tool;
-        this.canvasManager.setTool(tool);
-
-        this.toolButtons.forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
+        this.selectTool(tool);
       });
     });
 
@@ -747,11 +775,42 @@ class FlagGame {
       this.toggleDiffBtn.textContent = isHidden ? t.showDiff : t.hideDiff;
     });
 
-    // Atajos de teclado útiles
+    // Atajos de teclado útiles para PC y accesibilidad
     window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         this.canvasManager.undo();
+        return;
+      }
+
+      const key = e.key.toLowerCase();
+      if (key === 'b') {
+        this.selectTool('brush');
+      } else if (key === 'l') {
+        this.selectTool('line');
+      } else if (key === 'f') {
+        this.selectTool('fill');
+      } else if (key === 'r') {
+        this.selectTool('rectangle');
+      } else if (key === 'c') {
+        this.selectTool('circle');
+      } else if (key === 'm') {
+        if (this.toolMirror) this.toolMirror.click();
+      } else if (e.key === 'Enter') {
+        if (!this.resultsModal.classList.contains('hidden')) {
+          this.closeModal();
+          this.pickNextFlag();
+        } else if (!this.submitBtn.disabled) {
+          this.evaluateDrawing();
+        }
+      } else if (e.key === 'Escape') {
+        if (!this.resultsModal.classList.contains('hidden')) {
+          this.closeModal();
+        } else if (!this.settingsModal.classList.contains('hidden')) {
+          this.closeSettingsModal();
+        }
       }
     });
   }
@@ -882,7 +941,11 @@ class FlagGame {
     }
 
     try {
-      const targetCanvas = await renderTargetFlag(this.currentFlag.url, 300, 200);
+      const targetCanvas = await renderTargetFlag(
+        this.currentFlag.url,
+        this.canvasManager.width,
+        this.canvasManager.height
+      );
 
       const comparisonOptions = {
         ignoreShield: (this.shieldMode === 'ignore'),
@@ -948,17 +1011,36 @@ class FlagGame {
     this.gradeBadgeEl.style.backgroundColor = result.color;
     this.modalFeedbackEl.textContent = result.feedback;
 
+    const w = this.canvasManager.width;
+    const h = this.canvasManager.height;
+
+    this.resultUserCanvas.width = w;
+    this.resultUserCanvas.height = h;
+    this.resultTargetCanvas.width = w;
+    this.resultTargetCanvas.height = h;
+    this.resultDiffCanvas.width = w;
+    this.resultDiffCanvas.height = h;
+
+    const modalFrames = document.querySelectorAll('.comparison-box .frame, .diff-view-box .frame');
+    modalFrames.forEach((frame) => {
+      frame.style.setProperty('--flag-aspect-ratio', `${w} / ${h}`);
+    });
+
+    if (this.modalRatioBadge) {
+      this.modalRatioBadge.textContent = this.currentFlag.aspectText || `${(this.currentFlag.ratio || 1.5).toFixed(2)}:1`;
+    }
+
     const userResultCtx = this.resultUserCanvas.getContext('2d');
-    userResultCtx.clearRect(0, 0, 300, 200);
-    userResultCtx.drawImage(this.canvasManager.canvas, 0, 0, 300, 200);
+    userResultCtx.clearRect(0, 0, w, h);
+    userResultCtx.drawImage(this.canvasManager.canvas, 0, 0, w, h);
 
     const targetResultCtx = this.resultTargetCanvas.getContext('2d');
-    targetResultCtx.clearRect(0, 0, 300, 200);
-    targetResultCtx.drawImage(targetCanvas, 0, 0, 300, 200);
+    targetResultCtx.clearRect(0, 0, w, h);
+    targetResultCtx.drawImage(targetCanvas, 0, 0, w, h);
 
     const diffResultCtx = this.resultDiffCanvas.getContext('2d');
-    diffResultCtx.clearRect(0, 0, 300, 200);
-    diffResultCtx.drawImage(result.diffCanvas, 0, 0, 300, 200);
+    diffResultCtx.clearRect(0, 0, w, h);
+    diffResultCtx.drawImage(result.diffCanvas, 0, 0, w, h);
 
     this.diffContainer.classList.add('hidden');
     this.toggleDiffBtn.textContent = t.showDiff;

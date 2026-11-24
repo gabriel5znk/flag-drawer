@@ -440,6 +440,22 @@ body {
   flex-shrink: 0;
 }
 
+.ratio-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-card);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+}
+
 .shield-pill.active-shield {
   background-color: rgba(216, 44, 44, 0.12);
   color: var(--primary);
@@ -473,7 +489,10 @@ body {
 .canvas-wrapper {
   position: relative;
   width: 100%;
-  aspect-ratio: 3 / 2;
+  aspect-ratio: var(--flag-aspect-ratio, 3 / 2);
+  max-width: calc(min(52vh, 440px) * var(--flag-aspect-num, 1.5));
+  max-height: min(52vh, 440px);
+  margin: 0 auto;
   background-color: #FFFFFF;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
@@ -482,6 +501,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: aspect-ratio 0.25s ease-out;
 }
 
 #drawing-canvas {
@@ -993,12 +1013,15 @@ body {
 
 .frame {
   width: 100%;
-  aspect-ratio: 3 / 2;
+  aspect-ratio: var(--flag-aspect-ratio, 3 / 2);
+  max-height: 280px;
+  margin: 0 auto;
   background-color: #FFFFFF;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
+  transition: aspect-ratio 0.25s ease-out;
 }
 
 .frame canvas {
@@ -1312,5 +1335,143 @@ body {
   .color-wheel-btn {
     width: 23px;
     height: 23px;
+  }
+}
+
+/* ==========================================================================
+   Desktop / PC Responsive Layout (Swiss Grid Expansion)
+   ========================================================================== */
+
+@media (min-width: 860px) {
+  body {
+    padding: 24px 20px;
+  }
+
+  .app-container {
+    max-width: 1080px;
+    gap: 18px;
+  }
+
+  .app-header {
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .app-title {
+    font-size: 1.45rem;
+  }
+
+  .stat-pill {
+    padding: 8px 14px;
+    font-size: 0.78rem;
+  }
+
+  .game-controls-bar {
+    padding: 12px 18px;
+  }
+
+  .tier-chips-group {
+    gap: 6px;
+  }
+
+  .tier-chip {
+    padding: 6px 12px;
+    font-size: 0.76rem;
+  }
+
+  .prompt-section {
+    padding: 16px 22px;
+  }
+
+  .country-target {
+    font-size: 2rem;
+  }
+
+  /* Two-column Swiss Grid for workspace */
+  .canvas-workspace {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    grid-template-areas:
+      "board tools"
+      "submit tools";
+    gap: 18px 24px;
+    align-items: start;
+  }
+
+  .canvas-wrapper {
+    grid-area: board;
+    max-height: 480px;
+    max-width: calc(min(60vh, 480px) * var(--flag-aspect-num, 1.5));
+  }
+
+  .submit-action-area {
+    grid-area: submit;
+    margin-top: 4px;
+  }
+
+  .submit-btn {
+    padding: 14px 24px;
+    font-size: 1.05rem;
+  }
+
+  .toolbar-container {
+    grid-area: tools;
+    position: sticky;
+    top: 24px;
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .tools-group {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  .tool-btn {
+    padding: 10px 4px;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .tool-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .tool-name {
+    font-size: 0.68rem;
+  }
+
+  .tool-separator {
+    display: none;
+  }
+
+  .palette-row {
+    gap: 6px;
+  }
+
+  .color-swatch,
+  .color-wheel-btn {
+    width: 30px;
+    height: 30px;
+  }
+
+  /* Modal enlargement on desktop */
+  .modal-card {
+    max-width: 760px;
+    padding: 28px 32px;
+  }
+
+  .modal-title {
+    font-size: 3.2rem;
+  }
+
+  .comparison-grid {
+    gap: 20px;
+  }
+
+  .frame {
+    max-height: 320px;
   }
 }
