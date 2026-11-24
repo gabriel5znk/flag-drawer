@@ -15,16 +15,16 @@
   - Atajos de teclado para PC (B: pincel, L: linea, F: relleno, R: rectangulo, C: circulo, M: espejo, Ctrl+Z: deshacer, Enter: evaluar/continuar, Esc: cerrar modal).
 - **Motor de evaluacion comparativa:**
   - Renderizado dinamico del SVG de referencia en canvas oculto con las dimensiones y relacion de aspecto exactas de la bandera.
+  - Evaluacion gradual de tonos de color (tolerancia perfecta hasta distancia RGB 45 y decaimiento lineal permisivo hasta limite 135).
+  - Mapa de calor de diferencias visualmente intuitivo: aciertos en verde con intensidad proporcional a la cercania cromatica y fallos en rojo.
   - Escalado proporcional de las mascaras de escudos heraldicos segun las dimensiones activas del canvas.
-  - Comparacion pixel a pixel con umbral de tolerancia cromatica.
   - Sistema de perdon de escudos configurable (Casual vs Experto).
-  - Generacion de mapa de calor de diferencias visuales.
   - Clasificacion con grados S, B, C y F y porcentaje de precision.
 - **Sistema de juego y progreso:**
-  - Contador de racha actual (puntuaciones >= 60%).
-  - Puntuacion record historica.
-  - Contador total de banderas jugadas.
-  - Selector multiple de niveles de dificultad (Tier 1 a 4 o Todas).
+  - Seleccion inicial por defecto en dificultad Muy facil (Tier 1).
+  - Selector de dificultad desplegable (cerrado por defecto) con etiquetas simples (Muy facil, Facil, Normal, Dificil).
+  - Buscador desplegable de banderas por nombre (insensible a acentos, bilingue) para practicar banderas especificas.
+  - Estadisticas (Racha, Record, Jugadas) ubicadas dentro del menu de Opciones Avanzadas para mantener limpia la pantalla principal.
   - Seleccion de criterio de dificultad: por Popularidad (Fama) o por Complejidad grafica.
   - Opcion de saltar bandera actual o compartir resultado en portapapeles.
 - **Interfaz y diseno:**

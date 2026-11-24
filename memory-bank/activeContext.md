@@ -9,9 +9,9 @@ El proyecto cuenta con una implementacion funcional completa en vanilla JavaScri
 - Empaquetado universal standalone en `js/bundle.js` para asegurar compatibilidad universal en navegadores sin requerir servidor HTTP.
 
 ## Foco de Trabajo Actual
-- Adaptacion dinamica del lienzo segun la relacion de aspecto de cada bandera (1:1, 2:1, 3:2, 11:9, etc.).
-- Expansion y optimizacion de la vista de PC / escritorio (reticula suiza a 2 columnas con contenedor de 1080px y barra de herramientas lateral fija).
-- Integracion de atajos de teclado para PC (B, L, F, R, C, M, Ctrl+Z, Enter, Esc).
+- Evaluacion cromatica gradual y mas permisiva (`DEFAULT_THRESHOLD = 45`, `MAX_COLOR_TOLERANCE = 135`) con mapa de calor de intensidad verde a rojo.
+- Simplificacion de la pantalla principal: cabecera minimalista con solo 3 botones (buscador de banderas, selector de dificultad desplegable cerrado por defecto, y opciones avanzadas con estadisticas integradas).
+- Etiquetas de dificultad simplificadas (`Muy facil`, `Facil`, `Normal`, `Dificil`) y seleccion inicial por defecto en Tier 1 (`[1]`).
 - Sincronizacion del empaquetado universal standalone `bundle.js`.
 
 ## Proximos Pasos Posibles

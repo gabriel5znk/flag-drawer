@@ -50,7 +50,16 @@ const I18N = {
     shareResult: 'Compartir',
     nextFlag: 'Siguiente bandera',
     // Settings
-    settingsTitle: 'Configuración',
+    settingsTitle: 'Opciones Avanzadas',
+    statsSection: 'Estadísticas',
+    searchPlaceholder: 'Buscar país para practicar...',
+    searchEmpty: 'No se encontraron banderas',
+    tierLabels: {
+      1: 'Muy fácil',
+      2: 'Fácil',
+      3: 'Normal',
+      4: 'Difícil'
+    },
     diffApproach: 'Criterio de Dificultad',
     descDiffApproach: 'Define cómo se clasifican los 4 niveles de dificultad.',
     popApproachBtn: 'Por Fama',
@@ -108,7 +117,16 @@ const I18N = {
     shareResult: 'Share',
     nextFlag: 'Next Flag',
     // Settings
-    settingsTitle: 'Settings',
+    settingsTitle: 'Advanced Options',
+    statsSection: 'Statistics',
+    searchPlaceholder: 'Search country to practice...',
+    searchEmpty: 'No flags found',
+    tierLabels: {
+      1: 'Very easy',
+      2: 'Easy',
+      3: 'Normal',
+      4: 'Hard'
+    },
     diffApproach: 'Difficulty Criteria',
     descDiffApproach: 'Determines what makes a flag easy or difficult.',
     popApproachBtn: 'By Fame',
@@ -143,7 +161,7 @@ class FlagGame {
 
     // Ajustes del juego
     this.diffApproach = 'popularity'; // 'popularity' | 'design'
-    this.selectedTiers = [1, 2, 3, 4]; // Selección múltiple de niveles
+    this.selectedTiers = [1]; // Por defecto solo Muy fácil (Tier 1)
     this.currentLang = 'es'; // 'es' | 'en'
     this.currentTheme = 'dark'; // 'dark' | 'light'
     this.shieldMode = 'ignore'; // 'ignore' | 'require'
@@ -174,7 +192,14 @@ class FlagGame {
     this.lblStatStreak = document.getElementById('lbl-stat-streak');
     this.lblStatBest = document.getElementById('lbl-stat-best');
     this.lblStatPlayed = document.getElementById('lbl-stat-played');
+    this.lblStatsSection = document.getElementById('lbl-stats-section');
+    this.btnToggleSearch = document.getElementById('btn-toggle-search');
+    this.btnToggleDifficulty = document.getElementById('btn-toggle-difficulty');
     this.btnSettings = document.getElementById('btn-settings');
+    this.searchPanel = document.getElementById('search-panel');
+    this.difficultyPanel = document.getElementById('difficulty-panel');
+    this.flagSearchInput = document.getElementById('flag-search-input');
+    this.flagSearchResults = document.getElementById('flag-search-results');
 
     // Multi-select Difficulty Chips
     this.lblDifficulty = document.getElementById('lbl-difficulty');
@@ -419,11 +444,12 @@ class FlagGame {
     for (let i = 1; i <= 4; i++) {
       const chipTxt = document.getElementById(`txt-chip-${i}`);
       if (chipTxt) {
-        const meta = this.tierMeta[this.diffApproach][i];
-        const shortName = meta.shortName[this.currentLang];
-        chipTxt.textContent = `T${i}: ${shortName}`;
+        chipTxt.textContent = (t.tierLabels && t.tierLabels[i]) ? t.tierLabels[i] : `T${i}`;
       }
     }
+
+    if (this.lblStatsSection) this.lblStatsSection.textContent = t.statsSection;
+    if (this.flagSearchInput) this.flagSearchInput.placeholder = t.searchPlaceholder;
 
     // Prompt & buttons
     this.lblDrawPrompt.textContent = t.drawFlagOf;
@@ -470,6 +496,9 @@ class FlagGame {
     // Actualizar nombre del país actual si ya hay bandera activa
     if (this.currentFlag) {
       this.countryTargetEl.textContent = this.currentFlag.name[this.currentLang];
+      const tierProp = (this.diffApproach === 'popularity') ? 'popTier' : 'designTier';
+      const tierNum = this.currentFlag[tierProp];
+      this.targetTierBadge.textContent = (t.tierLabels && t.tierLabels[tierNum]) ? t.tierLabels[tierNum] : `T${tierNum}`;
       this.updateFlagShieldBadge();
     }
   }
@@ -587,18 +616,28 @@ class FlagGame {
     }
 
     const randomIndex = Math.floor(Math.random() * pool.length);
-    this.currentFlag = pool[randomIndex];
+    this.loadFlag(pool[randomIndex]);
+  }
+
+  selectSpecificFlag(flag) {
+    if (!flag) return;
+    this.loadFlag(flag);
+    this.toggleSearchPanel(false);
+  }
+
+  loadFlag(flag) {
+    const t = I18N[this.currentLang] || I18N.es;
+    this.currentFlag = flag;
 
     // Nombre en el idioma activo
     this.countryTargetEl.textContent = this.currentFlag.name[this.currentLang] || this.currentFlag.name.es;
 
-    // Nivel del país según el criterio activo
+    // Nivel del país según el criterio activo (solo etiqueta simple: Muy fácil, Fácil, Normal, Difícil)
     const tierProp = (this.diffApproach === 'popularity') ? 'popTier' : 'designTier';
     const tierNum = this.currentFlag[tierProp];
-    const meta = this.tierMeta[this.diffApproach][tierNum];
-    const shortName = meta ? meta.shortName[this.currentLang] : `T${tierNum}`;
+    const tierLabel = (t.tierLabels && t.tierLabels[tierNum]) ? t.tierLabels[tierNum] : `T${tierNum}`;
 
-    this.targetTierBadge.textContent = `T${tierNum}: ${shortName}`;
+    this.targetTierBadge.textContent = tierLabel;
     this.targetTierBadge.className = `tier-pill tier-${tierNum}`;
 
     // Adaptar dimensiones y proporción de aspecto al país actual
@@ -619,6 +658,106 @@ class FlagGame {
     this.updateFlagShieldBadge();
   }
 
+  normalizeSearchText(str) {
+    return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  }
+
+  toggleSearchPanel(forceState) {
+    if (!this.searchPanel || !this.btnToggleSearch) return;
+    const isHidden = this.searchPanel.classList.contains('hidden');
+    const shouldOpen = (typeof forceState === 'boolean') ? forceState : isHidden;
+
+    if (shouldOpen) {
+      this.toggleDifficultyPanel(false);
+      this.searchPanel.classList.remove('hidden');
+      this.btnToggleSearch.classList.add('active');
+      this.btnToggleSearch.setAttribute('aria-expanded', 'true');
+      this.renderSearchResults(this.flagSearchInput ? this.flagSearchInput.value : '');
+      if (this.flagSearchInput) {
+        setTimeout(() => this.flagSearchInput.focus(), 30);
+      }
+    } else {
+      this.searchPanel.classList.add('hidden');
+      this.btnToggleSearch.classList.remove('active');
+      this.btnToggleSearch.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  toggleDifficultyPanel(forceState) {
+    if (!this.difficultyPanel || !this.btnToggleDifficulty) return;
+    const isHidden = this.difficultyPanel.classList.contains('hidden');
+    const shouldOpen = (typeof forceState === 'boolean') ? forceState : isHidden;
+
+    if (shouldOpen) {
+      this.toggleSearchPanel(false);
+      this.difficultyPanel.classList.remove('hidden');
+      this.btnToggleDifficulty.classList.add('active');
+      this.btnToggleDifficulty.setAttribute('aria-expanded', 'true');
+    } else {
+      this.difficultyPanel.classList.add('hidden');
+      this.btnToggleDifficulty.classList.remove('active');
+      this.btnToggleDifficulty.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  renderSearchResults(query = '') {
+    if (!this.flagSearchResults) return;
+    const t = I18N[this.currentLang] || I18N.es;
+    const normQuery = this.normalizeSearchText(query);
+    const tierProp = (this.diffApproach === 'popularity') ? 'popTier' : 'designTier';
+
+    const matches = this.flags.filter((f) => {
+      if (!normQuery) return true;
+      const esName = this.normalizeSearchText(f.name.es);
+      const enName = this.normalizeSearchText(f.name.en);
+      return esName.includes(normQuery) || enName.includes(normQuery);
+    });
+
+    this.flagSearchResults.innerHTML = '';
+
+    if (matches.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'search-empty';
+      empty.textContent = t.searchEmpty;
+      this.flagSearchResults.appendChild(empty);
+      return;
+    }
+
+    matches.forEach((flag) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'search-result-item';
+      btn.setAttribute('role', 'option');
+
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = flag.name[this.currentLang] || flag.name.es;
+
+      const metaDiv = document.createElement('div');
+      metaDiv.className = 'search-result-meta';
+
+      const tierNum = flag[tierProp];
+      const tierSpan = document.createElement('span');
+      tierSpan.className = `tier-pill tier-${tierNum}`;
+      tierSpan.textContent = (t.tierLabels && t.tierLabels[tierNum]) ? t.tierLabels[tierNum] : `T${tierNum}`;
+
+      const ratioSpan = document.createElement('span');
+      ratioSpan.className = 'ratio-pill';
+      ratioSpan.textContent = flag.aspectText || '3:2';
+
+      metaDiv.appendChild(tierSpan);
+      metaDiv.appendChild(ratioSpan);
+      btn.appendChild(nameSpan);
+      btn.appendChild(metaDiv);
+
+      btn.addEventListener('click', () => {
+        if (this.flagSearchInput) this.flagSearchInput.value = '';
+        this.selectSpecificFlag(flag);
+      });
+
+      this.flagSearchResults.appendChild(btn);
+    });
+  }
+
   selectTool(tool) {
     this.canvasManager.setTool(tool);
     this.toolButtons.forEach((b) => {
@@ -627,7 +766,26 @@ class FlagGame {
   }
 
   attachEventListeners() {
-    // Abrir modal de configuración
+    // Botones de cabecera: Buscar, Dificultad, Opciones Avanzadas
+    if (this.btnToggleSearch) {
+      this.btnToggleSearch.addEventListener('click', () => {
+        this.toggleSearchPanel();
+      });
+    }
+
+    if (this.btnToggleDifficulty) {
+      this.btnToggleDifficulty.addEventListener('click', () => {
+        this.toggleDifficultyPanel();
+      });
+    }
+
+    if (this.flagSearchInput) {
+      this.flagSearchInput.addEventListener('input', (e) => {
+        this.renderSearchResults(e.target.value);
+      });
+    }
+
+    // Abrir modal de opciones avanzadas
     this.btnSettings.addEventListener('click', () => {
       this.openSettingsModal();
     });
@@ -986,10 +1144,9 @@ class FlagGame {
 
     const tierProp = (this.diffApproach === 'popularity') ? 'popTier' : 'designTier';
     const tierNum = this.currentFlag[tierProp];
-    const meta = this.tierMeta[this.diffApproach][tierNum];
-    const shortName = meta ? meta.shortName[this.currentLang] : `T${tierNum}`;
+    const tierLabel = (t.tierLabels && t.tierLabels[tierNum]) ? t.tierLabels[tierNum] : `T${tierNum}`;
 
-    this.modalTierBadge.textContent = `T${tierNum}: ${shortName}`;
+    this.modalTierBadge.textContent = tierLabel;
     this.modalTierBadge.className = `tier-pill tier-${tierNum}`;
 
     if (this.currentFlag.hasShield) {

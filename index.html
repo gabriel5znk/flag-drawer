@@ -8,7 +8,7 @@
 </head>
 <body>
   <div class="app-container">
-    <!-- Header with Stats & Settings Button -->
+    <!-- Header with Search, Difficulty & Advanced Options Buttons -->
     <header class="app-header">
       <div class="logo-area">
         <svg class="logo-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -19,37 +19,28 @@
       </div>
 
       <div class="header-right">
-        <div class="stats-bar" role="region" aria-label="Estadísticas de juego">
-          <div class="stat-pill" title="Racha actual (puntajes ≥ 60%)">
-            <svg class="stat-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-            </svg>
-            <span class="stat-label" id="lbl-stat-streak">RACHA</span>
-            <span class="stat-value" id="stat-streak">0</span>
-          </div>
-          <div class="stat-pill" title="Puntuación más alta">
-            <svg class="stat-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-              <path d="M4 22h16"></path>
-              <path d="M10 14.66V17c0 .55-.45 1-1 1H8c-.55 0-1 .45-1 1v1c0 .55.45 1 1 1h8c.55 0 1-.45 1-1v-1c0-.55-.45-1-1-1h-1c-.55 0-1-.45-1-1v-2.34"></path>
-              <path d="M6 4h12a2 2 0 0 1 2 2v3a6 6 0 0 1-6 6h0a6 6 0 0 1-6-6V6a2 2 0 0 1 2-2z"></path>
-            </svg>
-            <span class="stat-label" id="lbl-stat-best">RÉCORD</span>
-            <span class="stat-value" id="stat-best">0%</span>
-          </div>
-          <div class="stat-pill" title="Banderas evaluadas">
-            <svg class="stat-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"></circle>
-              <circle cx="12" cy="12" r="6"></circle>
-              <circle cx="12" cy="12" r="2"></circle>
-            </svg>
-            <span class="stat-label" id="lbl-stat-played">JUGADAS</span>
-            <span class="stat-value" id="stat-played">0</span>
-          </div>
-        </div>
+        <button id="btn-toggle-search" class="btn-header-icon" type="button" title="Buscar bandera / Search flag" aria-label="Buscar bandera" aria-expanded="false">
+          <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </button>
 
-        <button id="btn-settings" class="btn-settings-header" type="button" title="Configuraciones / Settings" aria-label="Abrir configuración">
+        <button id="btn-toggle-difficulty" class="btn-header-icon" type="button" title="Dificultad / Difficulty" aria-label="Seleccionar dificultad" aria-expanded="false">
+          <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="4" y1="21" x2="4" y2="14"></line>
+            <line x1="4" y1="10" x2="4" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12" y2="3"></line>
+            <line x1="20" y1="21" x2="20" y2="16"></line>
+            <line x1="20" y1="12" x2="20" y2="3"></line>
+            <line x1="1" y1="14" x2="7" y2="14"></line>
+            <line x1="9" y1="8" x2="15" y2="8"></line>
+            <line x1="17" y1="16" x2="23" y2="16"></line>
+          </svg>
+        </button>
+
+        <button id="btn-settings" class="btn-settings-header" type="button" title="Opciones avanzadas / Advanced options" aria-label="Abrir opciones avanzadas">
           <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -58,36 +49,48 @@
       </div>
     </header>
 
-    <!-- Multi-Select Difficulty Filter Bar -->
-    <section class="game-controls-bar">
+    <!-- Collapsible Flag Search Panel (Closed by default) -->
+    <section id="search-panel" class="collapsible-panel hidden" aria-label="Buscar bandera">
+      <div class="search-input-wrap">
+        <svg class="search-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="search" id="flag-search-input" class="flag-search-input" placeholder="Buscar país para practicar..." autocomplete="off">
+      </div>
+      <div id="flag-search-results" class="flag-search-results" role="listbox" aria-label="Resultados de búsqueda"></div>
+    </section>
+
+    <!-- Collapsible Difficulty Filter Bar (Closed by default) -->
+    <section id="difficulty-panel" class="game-controls-bar collapsible-panel hidden">
       <div class="control-box full-width">
         <div class="control-header-row">
           <div class="label-with-mode">
             <label class="control-label" id="lbl-difficulty">Dificultad</label>
             <span id="active-approach-tag" class="approach-tag" title="Clic para configurar criterio">Fama</span>
           </div>
-          <span id="tier-counter-badge" class="tier-counter-badge">143 banderas</span>
+          <span id="tier-counter-badge" class="tier-counter-badge">35 banderas</span>
         </div>
         <!-- Selector múltiple de niveles de dificultad -->
         <div class="tier-chips-group" role="group" aria-label="Niveles de dificultad">
-          <button id="chip-all" class="tier-chip active" type="button" data-tier="all">
+          <button id="chip-all" class="tier-chip" type="button" data-tier="all">
             <span id="txt-chip-all">Todas</span>
           </button>
-          <button class="tier-chip active" type="button" data-tier="1" id="chip-1" title="Tier 1">
+          <button class="tier-chip active" type="button" data-tier="1" id="chip-1" title="Muy fácil">
             <span class="chip-dot dot-1"></span>
-            <span class="chip-label" id="txt-chip-1">T1: Famosas</span>
+            <span class="chip-label" id="txt-chip-1">Muy fácil</span>
           </button>
-          <button class="tier-chip active" type="button" data-tier="2" id="chip-2" title="Tier 2">
+          <button class="tier-chip" type="button" data-tier="2" id="chip-2" title="Fácil">
             <span class="chip-dot dot-2"></span>
-            <span class="chip-label" id="txt-chip-2">T2: Conocidas</span>
+            <span class="chip-label" id="txt-chip-2">Fácil</span>
           </button>
-          <button class="tier-chip active" type="button" data-tier="3" id="chip-3" title="Tier 3">
+          <button class="tier-chip" type="button" data-tier="3" id="chip-3" title="Normal">
             <span class="chip-dot dot-3"></span>
-            <span class="chip-label" id="txt-chip-3">T3: Menos comunes</span>
+            <span class="chip-label" id="txt-chip-3">Normal</span>
           </button>
-          <button class="tier-chip active" type="button" data-tier="4" id="chip-4" title="Tier 4">
+          <button class="tier-chip" type="button" data-tier="4" id="chip-4" title="Difícil">
             <span class="chip-dot dot-4"></span>
-            <span class="chip-label" id="txt-chip-4">T4: Micronaciones</span>
+            <span class="chip-label" id="txt-chip-4">Difícil</span>
           </button>
         </div>
       </div>
@@ -380,6 +383,40 @@
         </div>
 
         <div class="settings-body">
+          <!-- 0. Estadísticas -->
+          <div class="setting-item">
+            <span class="setting-title" id="lbl-stats-section">Estadísticas</span>
+            <div class="stats-modal-grid" role="region" aria-label="Estadísticas de juego">
+              <div class="stat-modal-card" title="Racha actual (puntajes >= 60%)">
+                <svg class="stat-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+                <span class="stat-value" id="stat-streak">0</span>
+                <span class="stat-label" id="lbl-stat-streak">RACHA</span>
+              </div>
+              <div class="stat-modal-card" title="Puntuación más alta">
+                <svg class="stat-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+                  <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+                  <path d="M4 22h16"></path>
+                  <path d="M10 14.66V17c0 .55-.45 1-1 1H8c-.55 0-1 .45-1 1v1c0 .55.45 1 1 1h8c.55 0 1-.45 1-1v-1c0-.55-.45-1-1-1h-1c-.55 0-1-.45-1-1v-2.34"></path>
+                  <path d="M6 4h12a2 2 0 0 1 2 2v3a6 6 0 0 1-6 6h0a6 6 0 0 1-6-6V6a2 2 0 0 1 2-2z"></path>
+                </svg>
+                <span class="stat-value" id="stat-best">0%</span>
+                <span class="stat-label" id="lbl-stat-best">RÉCORD</span>
+              </div>
+              <div class="stat-modal-card" title="Banderas evaluadas">
+                <svg class="stat-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="12" cy="12" r="6"></circle>
+                  <circle cx="12" cy="12" r="2"></circle>
+                </svg>
+                <span class="stat-value" id="stat-played">0</span>
+                <span class="stat-label" id="lbl-stat-played">JUGADAS</span>
+              </div>
+            </div>
+          </div>
+
           <!-- 1. Criterio de Dificultad -->
           <div class="setting-item">
             <div class="setting-title-row">

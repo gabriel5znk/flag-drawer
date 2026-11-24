@@ -3,7 +3,8 @@
  * Soporta Modo Normal (con perdón/máscara de escudos) y Modo Experto (con escudo obligatorio).
  */
 
-export const DEFAULT_THRESHOLD = 42; // Umbral de tolerancia cromática (35 - 45)
+export const DEFAULT_THRESHOLD = 45; // Tolerancia perfecta (distancia RGB donde aún es 100%)
+export const MAX_COLOR_TOLERANCE = 135; // Límite máximo permisivo (por encima es 0%)
 
 /**
  * Devuelve la calificación cualitativa, medalla y mensaje de retroalimentación
@@ -134,8 +135,11 @@ export function compareCanvases(userCanvas, targetCanvas, options = {}) {
   const targetData = targetCtx.getImageData(0, 0, width, height).data;
 
   const totalPixels = width * height;
+  let scoreSum = 0;
   let matches = 0;
-  const thresholdSq = threshold * threshold;
+  const perfectThreshold = threshold;
+  const maxTolerance = options.maxTolerance || MAX_COLOR_TOLERANCE;
+  const toleranceRange = Math.max(1, maxTolerance - perfectThreshold);
 
   // Si hay escudo que perdonar, parseamos el color base de fondo
   let shieldFillRgb = null;
@@ -151,7 +155,7 @@ export function compareCanvases(userCanvas, targetCanvas, options = {}) {
     sY2 = Math.round(shield.y[1] * scaleY);
   }
 
-  // Canvas para visualizar las diferencias (Diff map)
+  // Canvas para visualizar las diferencias (Mapa de calor: verde intenso -> verde tenue -> rojo)
   const diffCanvas = document.createElement('canvas');
   diffCanvas.width = width;
   diffCanvas.height = height;
@@ -173,45 +177,56 @@ export function compareCanvases(userCanvas, targetCanvas, options = {}) {
     const tG = targetData[i + 1];
     const tB = targetData[i + 2];
 
-    // Distancia cromática contra la bandera original
+    // Distancia cromática euclidiana contra la bandera original
     const dr = uR - tR;
     const dg = uG - tG;
     const db = uB - tB;
-    const distSq = dr * dr + dg * dg + db * db;
+    let dist = Math.sqrt(dr * dr + dg * dg + db * db);
 
-    let isMatch = distSq <= thresholdSq;
-
-    // Si no coincide directamente, pero estamos en modo perdonar escudo y cae en la zona del escudo:
-    if (!isMatch && shieldFillRgb && x >= sX1 && x <= sX2 && y >= sY1 && y <= sY2) {
+    // Si estamos en modo perdonar escudo y cae en la zona del escudo, usar la mejor coincidencia
+    if (shieldFillRgb && x >= sX1 && x <= sX2 && y >= sY1 && y <= sY2) {
       const dFillR = uR - shieldFillRgb.r;
       const dFillG = uG - shieldFillRgb.g;
       const dFillB = uB - shieldFillRgb.b;
-      const distFillSq = dFillR * dFillR + dFillG * dFillG + dFillB * dFillB;
-
-      if (distFillSq <= thresholdSq) {
-        isMatch = true; // El usuario dibujó la franja base limpia del escudo
+      const distFill = Math.sqrt(dFillR * dFillR + dFillG * dFillG + dFillB * dFillB);
+      if (distFill < dist) {
+        dist = distFill;
       }
     }
 
-    if (isMatch) {
+    let pixelScore = 0;
+    if (dist <= perfectThreshold) {
+      pixelScore = 1;
+    } else if (dist < maxTolerance) {
+      pixelScore = 1 - (dist - perfectThreshold) / toleranceRange;
+    }
+
+    scoreSum += pixelScore;
+    if (pixelScore >= 0.5) {
       matches++;
-      // Píxel coincidente: teñir verde en diff map
-      diffData[i] = Math.round(uR * 0.7);
-      diffData[i + 1] = Math.min(255, Math.round(uG * 0.7 + 70));
-      diffData[i + 2] = Math.round(uB * 0.7);
+    }
+
+    // Luminancia sutil de la bandera objetivo para mantener referencia visual de la forma
+    const lum = tR * 0.299 + tG * 0.587 + tB * 0.114;
+
+    if (pixelScore > 0) {
+      // Acierto: verde cuya intensidad disminuye conforme se aleja del tono objetivo
+      diffData[i] = Math.round(lum * 0.12 + (1 - pixelScore) * 65);
+      diffData[i + 1] = Math.min(255, Math.round(lum * 0.12 + 45 + pixelScore * 195));
+      diffData[i + 2] = Math.round(lum * 0.12 + 20);
       diffData[i + 3] = 255;
     } else {
-      // Píxel discordante: resaltar en rojo
-      diffData[i] = Math.min(255, Math.round(uR * 0.6 + 120));
-      diffData[i + 1] = Math.round(uG * 0.5);
-      diffData[i + 2] = Math.round(uB * 0.5);
+      // Fallo: rojo claro/intenso
+      diffData[i] = Math.min(255, Math.round(lum * 0.12 + 215));
+      diffData[i + 1] = Math.round(lum * 0.12 + 24);
+      diffData[i + 2] = Math.round(lum * 0.12 + 28);
       diffData[i + 3] = 255;
     }
   }
   const calcTime = performance.now() - t0;
   diffCtx.putImageData(diffImageData, 0, 0);
 
-  const rawScore = (matches / totalPixels) * 100;
+  const rawScore = (scoreSum / totalPixels) * 100;
   const score = Math.round(rawScore);
   const gradeInfo = getGradeInfo(score);
 

@@ -30,10 +30,12 @@ El proyecto sigue una arquitectura modular en cliente (Client-Side Vanilla Archi
 
 ### 2. Evaluador Cromático y Scoring (`js/comparator.js`)
 - Dibuja la bandera SVG objetivo sobre un canvas virtual de referencia escalado a las dimensiones exactas `(width, height)` del dibujo actual.
-- En caso de banderas con escudos y modo casual activado, escala las coordenadas de la mascara de escudo desde la base 300x200 hacia la resolucion activa y evalua coincidencia con `shield.fill`.
-- Realiza una comparacion pixel a pixel extrayendo los buffers de pixeles (`data` Uint8ClampedArray).
-- Calcula la distancia euclidiana de color en espacio RGB con umbral de tolerancia configurable (`DEFAULT_THRESHOLD = 42`).
-- Genera una imagen de mapa de diferencias (heat diff) resaltando en rojo los pixeles discordantes para retroalimentacion visual.
+- En caso de banderas con escudos y modo casual activado, escala las coordenadas de la mascara de escudo desde la base 300x200 hacia la resolucion activa y toma la menor distancia entre el color oficial y `shield.fill`.
+- Realiza una comparacion pixel a pixel con puntuacion gradual continua:
+  - Distancia RGB <= `DEFAULT_THRESHOLD` (45): 100% de acierto (`1.0`).
+  - Distancia RGB entre `45` y `MAX_COLOR_TOLERANCE` (135): decaimiento lineal de `1.0` a `0.0`.
+  - Distancia RGB >= `135`: fallo (`0.0`).
+- Genera un mapa de calor de diferencias (`diffCanvas`): los aciertos se pintan en verde con intensidad proporcional al puntaje del pixel (verde brillante en exactitud, verde tenue al alejarse) y los fallos en rojo.
 - Asigna grados cuantitativos y cualitativos:
   - S: >= 90%
   - B: >= 70%
