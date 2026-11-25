@@ -200,6 +200,15 @@
             <span class="tool-name" id="tool-name-undo">Deshacer</span>
           </button>
 
+          <!-- Redo Button -->
+          <button id="btn-redo" class="tool-btn" title="Rehacer trazo (Ctrl+Y)" disabled>
+            <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 7v6h-6"></path>
+              <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path>
+            </svg>
+            <span class="tool-name" id="tool-name-redo">Rehacer</span>
+          </button>
+
           <!-- Clear Button -->
           <button id="btn-clear" class="tool-btn btn-danger-subtle" title="Limpiar lienzo a blanco">
             <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -228,18 +237,18 @@
             <button class="color-swatch" data-color="#000000" style="--swatch-color: #000000;" title="Negro"></button>
             <button class="color-swatch" data-color="#808080" style="--swatch-color: #808080;" title="Gris neutro"></button>
             <button class="color-swatch active" data-color="#CE1126" style="--swatch-color: #CE1126;" title="Rojo carmesí"></button>
+            <button class="color-swatch" data-color="#0038A8" style="--swatch-color: #0038A8;" title="Azul rey"></button>
             <button class="color-swatch" data-color="#002654" style="--swatch-color: #002654;" title="Azul marino"></button>
             <button class="color-swatch" data-color="#75AADB" style="--swatch-color: #75AADB;" title="Azul cielo"></button>
             <button class="color-swatch" data-color="#009A44" style="--swatch-color: #009A44;" title="Verde bandera"></button>
-            <button class="color-swatch" data-color="#4ADE80" style="--swatch-color: #4ADE80;" title="Verde claro"></button>
           </div>
 
           <!-- Fila 2: Complementarios + Celda Activa + Círculo Cromático -->
           <div class="palette-row" role="radiogroup" aria-label="Colores Complementarios">
-            <button class="color-swatch" data-color="#FFD100" style="--swatch-color: #FFD100;" title="Amarillo oro"></button>
+            <button class="color-swatch" data-color="#006847" style="--swatch-color: #006847;" title="Verde oscuro"></button>
+            <button class="color-swatch" data-color="#FCD116" style="--swatch-color: #FCD116;" title="Amarillo oro"></button>
             <button class="color-swatch" data-color="#FF7900" style="--swatch-color: #FF7900;" title="Naranja"></button>
             <button class="color-swatch" data-color="#78350F" style="--swatch-color: #78350F;" title="Marrón"></button>
-            <button class="color-swatch" data-color="#C29B38" style="--swatch-color: #C29B38;" title="Dorado"></button>
             <button class="color-swatch" data-color="#8A1538" style="--swatch-color: #8A1538;" title="Vino / Granate"></button>
             <button class="color-swatch" data-color="#00A3E0" style="--swatch-color: #00A3E0;" title="Cian"></button>
             <button class="color-swatch" data-color="#7E22CE" style="--swatch-color: #7E22CE;" title="Púrpura / Morado"></button>
@@ -250,7 +259,7 @@
             </div>
 
             <!-- Botón con Círculo Cromático -->
-            <button id="color-wheel-btn" class="color-wheel-btn" type="button" title="Selector de color personalizado">
+            <button id="color-wheel-btn" class="color-wheel-btn" type="button" title="Selector de color personalizado" aria-expanded="false" aria-controls="custom-color-popover">
               <svg class="wheel-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle>
                 <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle>
@@ -258,8 +267,27 @@
                 <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle>
                 <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path>
               </svg>
-              <input type="color" id="custom-color-picker" value="#CE1126" class="sr-only-picker" aria-label="Selector de color personalizado">
             </button>
+          </div>
+
+          <!-- Popover de Rueda Cromática Personalizada -->
+          <div id="custom-color-popover" class="color-picker-popover hidden" role="dialog" aria-label="Rueda cromática">
+            <div class="color-picker-header">
+              <span id="lbl-color-wheel-title" class="color-picker-title">Rueda cromática</span>
+              <button id="color-picker-close" class="color-picker-close" type="button" aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="color-wheel-stage">
+              <canvas id="color-wheel-canvas" width="180" height="180"></canvas>
+              <div id="color-wheel-cursor" class="color-wheel-cursor"></div>
+            </div>
+            <div class="color-brightness-row">
+              <span id="lbl-color-brightness" class="color-brightness-label">Brillo</span>
+              <input type="range" id="color-brightness-slider" min="0" max="100" value="100" class="color-brightness-slider">
+            </div>
+            <div class="color-hex-row">
+              <span id="color-picker-preview" class="color-picker-preview" style="background-color: #CE1126;"></span>
+              <input type="text" id="color-hex-input" class="color-hex-input" value="#CE1126" maxlength="7" spellcheck="false" aria-label="Código Hex">
+            </div>
           </div>
         </div>
       </div>

@@ -31,8 +31,9 @@ export class CanvasManager {
     this.brushSize = 10;
     this.shapeMode = 'fill';
 
-    // Historial para Undo (Límite de 25 estados)
+    // Historial para Undo / Redo (Límite de 25 estados)
     this.undoStack = [];
+    this.redoStack = [];
     this.maxUndo = 25;
 
     // Estado del cursor/puntero
@@ -66,6 +67,7 @@ export class CanvasManager {
     }
 
     this.undoStack = [];
+    this.redoStack = [];
     this.initCanvas();
     this.notifyStateChange();
   }
@@ -85,6 +87,7 @@ export class CanvasManager {
       if (this.undoStack.length > this.maxUndo) {
         this.undoStack.shift();
       }
+      this.redoStack = [];
       this.notifyStateChange();
     } catch (e) {
       console.warn('No se pudo guardar el estado de deshacer:', e);
@@ -93,7 +96,8 @@ export class CanvasManager {
 
   undo() {
     if (this.undoStack.length > 1) {
-      this.undoStack.pop(); // Quitar estado actual
+      const currentState = this.undoStack.pop();
+      this.redoStack.push(currentState);
       const prevState = this.undoStack[this.undoStack.length - 1];
       this.ctx.putImageData(prevState, 0, 0);
       this.notifyStateChange();
@@ -102,8 +106,23 @@ export class CanvasManager {
     return false;
   }
 
+  redo() {
+    if (this.redoStack.length > 0) {
+      const nextState = this.redoStack.pop();
+      this.undoStack.push(nextState);
+      this.ctx.putImageData(nextState, 0, 0);
+      this.notifyStateChange();
+      return true;
+    }
+    return false;
+  }
+
   canUndo() {
     return this.undoStack.length > 1;
+  }
+
+  canRedo() {
+    return this.redoStack.length > 0;
   }
 
   clear() {
@@ -197,6 +216,7 @@ export class CanvasManager {
     if (typeof this.onStateChange === 'function') {
       this.onStateChange({
         canUndo: this.canUndo(),
+        canRedo: this.canRedo(),
         tool: this.currentTool,
         color: this.currentColor,
         size: this.brushSize,
@@ -418,15 +438,12 @@ export class CanvasManager {
   }
 
   drawCircle(x1, y1, x2, y2) {
-    const rx = Math.abs(x2 - x1) / 2;
-    const ry = Math.abs(y2 - y1) / 2;
-    const cx = Math.min(x1, x2) + rx;
-    const cy = Math.min(y1, y2) + ry;
+    const radius = Math.hypot(x2 - x1, y2 - y1);
 
-    if (rx <= 0 || ry <= 0) return;
+    if (radius <= 0) return;
 
     this.ctx.beginPath();
-    this.ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+    this.ctx.arc(x1, y1, radius, 0, Math.PI * 2);
     this.ctx.fillStyle = this.currentColor;
     this.ctx.fill();
   }
@@ -447,15 +464,17 @@ export class CanvasManager {
 
   /**
    * Algoritmo iterativo de Flood Fill (relleno por inundación)
-   * con tolerancia de color para antialiasing de trazos.
+   * con tolerancia de color y mezcla proporcional en bordes suavizados (antialiasing).
    */
-  floodFill(startX, startY, hexColor, tolerance = 32) {
+  floodFill(startX, startY, hexColor, tolerance = 48) {
     if (startX < 0 || startX >= this.width || startY < 0 || startY >= this.height) return;
 
     const imgData = this.ctx.getImageData(0, 0, this.width, this.height);
     const data = imgData.data;
+    const w = this.width;
+    const h = this.height;
 
-    const targetIdx = (startY * this.width + startX) * 4;
+    const targetIdx = (startY * w + startX) * 4;
     const tr = data[targetIdx];
     const tg = data[targetIdx + 1];
     const tb = data[targetIdx + 2];
@@ -468,16 +487,17 @@ export class CanvasManager {
     if (initDiffSq <= 9 && Math.abs(ta - fill.a) < 5) return;
 
     const tolSq = tolerance * tolerance;
-    const visited = new Uint8Array(this.width * this.height);
+    // 0 = no visitado, 1 = rechazado (borde candidato), 2 = rellenado
+    const state = new Uint8Array(w * h);
+    const fringeCandidates = [];
     const stack = [startX, startY];
 
     while (stack.length > 0) {
       const y = stack.pop();
       const x = stack.pop();
-      const pos = y * this.width + x;
+      const pos = y * w + x;
 
-      if (visited[pos]) continue;
-      visited[pos] = 1;
+      if (state[pos] !== 0) continue;
 
       const idx = pos * 4;
       const dr = data[idx] - tr;
@@ -486,24 +506,69 @@ export class CanvasManager {
       const diffSq = dr * dr + dg * dg + db * db;
 
       if (diffSq <= tolSq) {
+        state[pos] = 2;
         data[idx] = fill.r;
         data[idx + 1] = fill.g;
         data[idx + 2] = fill.b;
         data[idx + 3] = fill.a;
 
-        if (x > 0 && !visited[pos - 1]) {
-          stack.push(x - 1, y);
-        }
-        if (x < this.width - 1 && !visited[pos + 1]) {
-          stack.push(x + 1, y);
-        }
-        if (y > 0 && !visited[pos - this.width]) {
-          stack.push(x, y - 1);
-        }
-        if (y < this.height - 1 && !visited[pos + this.width]) {
-          stack.push(x, y + 1);
+        if (x > 0 && state[pos - 1] === 0) stack.push(x - 1, y);
+        if (x < w - 1 && state[pos + 1] === 0) stack.push(x + 1, y);
+        if (y > 0 && state[pos - w] === 0) stack.push(x, y - 1);
+        if (y < h - 1 && state[pos + w] === 0) stack.push(x, y + 1);
+      } else {
+        state[pos] = 1;
+        fringeCandidates.push(pos);
+      }
+    }
+
+    // Mezcla proporcional en 1px de borde suavizado sin invadir trazos sólidos
+    const updates = [];
+    const deltaR = fill.r - tr;
+    const deltaG = fill.g - tg;
+    const deltaB = fill.b - tb;
+
+    for (let i = 0; i < fringeCandidates.length; i++) {
+      const pos = fringeCandidates[i];
+      const x = pos % w;
+      const y = (pos - x) / w;
+      const idx = pos * 4;
+
+      const dP = Math.hypot(data[idx] - tr, data[idx + 1] - tg, data[idx + 2] - tb);
+      let maxDN = dP;
+
+      for (let dy = -1; dy <= 1; dy++) {
+        const ny = y + dy;
+        if (ny < 0 || ny >= h) continue;
+        for (let dx = -1; dx <= 1; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          const nx = x + dx;
+          if (nx < 0 || nx >= w) continue;
+          const npos = ny * w + nx;
+          if (state[npos] === 2) continue;
+          const nidx = npos * 4;
+          const dN = Math.hypot(data[nidx] - tr, data[nidx + 1] - tg, data[nidx + 2] - tb);
+          if (dN > maxDN) maxDN = dN;
         }
       }
+
+      if (maxDN > dP + 8) {
+        const alpha = 1 - dP / maxDN;
+        updates.push(
+          pos,
+          Math.max(0, Math.min(255, Math.round(data[idx] + alpha * deltaR))),
+          Math.max(0, Math.min(255, Math.round(data[idx + 1] + alpha * deltaG))),
+          Math.max(0, Math.min(255, Math.round(data[idx + 2] + alpha * deltaB)))
+        );
+      }
+    }
+
+    for (let i = 0; i < updates.length; i += 4) {
+      const idx = updates[i] * 4;
+      data[idx] = updates[i + 1];
+      data[idx + 1] = updates[i + 2];
+      data[idx + 2] = updates[i + 3];
+      data[idx + 3] = fill.a;
     }
 
     this.ctx.putImageData(imgData, 0, 0);

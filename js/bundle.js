@@ -451,8 +451,9 @@ class CanvasManager {
     this.brushSize = 10;
     this.shapeMode = 'fill';
 
-    // Historial para Undo (Límite de 25 estados)
+    // Historial para Undo / Redo (Límite de 25 estados)
     this.undoStack = [];
+    this.redoStack = [];
     this.maxUndo = 25;
 
     // Estado del cursor/puntero
@@ -486,6 +487,7 @@ class CanvasManager {
     }
 
     this.undoStack = [];
+    this.redoStack = [];
     this.initCanvas();
     this.notifyStateChange();
   }
@@ -505,6 +507,7 @@ class CanvasManager {
       if (this.undoStack.length > this.maxUndo) {
         this.undoStack.shift();
       }
+      this.redoStack = [];
       this.notifyStateChange();
     } catch (e) {
       console.warn('No se pudo guardar el estado de deshacer:', e);
@@ -513,7 +516,8 @@ class CanvasManager {
 
   undo() {
     if (this.undoStack.length > 1) {
-      this.undoStack.pop(); // Quitar estado actual
+      const currentState = this.undoStack.pop();
+      this.redoStack.push(currentState);
       const prevState = this.undoStack[this.undoStack.length - 1];
       this.ctx.putImageData(prevState, 0, 0);
       this.notifyStateChange();
@@ -522,8 +526,23 @@ class CanvasManager {
     return false;
   }
 
+  redo() {
+    if (this.redoStack.length > 0) {
+      const nextState = this.redoStack.pop();
+      this.undoStack.push(nextState);
+      this.ctx.putImageData(nextState, 0, 0);
+      this.notifyStateChange();
+      return true;
+    }
+    return false;
+  }
+
   canUndo() {
     return this.undoStack.length > 1;
+  }
+
+  canRedo() {
+    return this.redoStack.length > 0;
   }
 
   clear() {
@@ -617,6 +636,7 @@ class CanvasManager {
     if (typeof this.onStateChange === 'function') {
       this.onStateChange({
         canUndo: this.canUndo(),
+        canRedo: this.canRedo(),
         tool: this.currentTool,
         color: this.currentColor,
         size: this.brushSize,
@@ -838,15 +858,12 @@ class CanvasManager {
   }
 
   drawCircle(x1, y1, x2, y2) {
-    const rx = Math.abs(x2 - x1) / 2;
-    const ry = Math.abs(y2 - y1) / 2;
-    const cx = Math.min(x1, x2) + rx;
-    const cy = Math.min(y1, y2) + ry;
+    const radius = Math.hypot(x2 - x1, y2 - y1);
 
-    if (rx <= 0 || ry <= 0) return;
+    if (radius <= 0) return;
 
     this.ctx.beginPath();
-    this.ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+    this.ctx.arc(x1, y1, radius, 0, Math.PI * 2);
     this.ctx.fillStyle = this.currentColor;
     this.ctx.fill();
   }
@@ -867,15 +884,17 @@ class CanvasManager {
 
   /**
    * Algoritmo iterativo de Flood Fill (relleno por inundación)
-   * con tolerancia de color para antialiasing de trazos.
+   * con tolerancia de color y mezcla proporcional en bordes suavizados (antialiasing).
    */
-  floodFill(startX, startY, hexColor, tolerance = 32) {
+  floodFill(startX, startY, hexColor, tolerance = 48) {
     if (startX < 0 || startX >= this.width || startY < 0 || startY >= this.height) return;
 
     const imgData = this.ctx.getImageData(0, 0, this.width, this.height);
     const data = imgData.data;
+    const w = this.width;
+    const h = this.height;
 
-    const targetIdx = (startY * this.width + startX) * 4;
+    const targetIdx = (startY * w + startX) * 4;
     const tr = data[targetIdx];
     const tg = data[targetIdx + 1];
     const tb = data[targetIdx + 2];
@@ -888,16 +907,17 @@ class CanvasManager {
     if (initDiffSq <= 9 && Math.abs(ta - fill.a) < 5) return;
 
     const tolSq = tolerance * tolerance;
-    const visited = new Uint8Array(this.width * this.height);
+    // 0 = no visitado, 1 = rechazado (borde candidato), 2 = rellenado
+    const state = new Uint8Array(w * h);
+    const fringeCandidates = [];
     const stack = [startX, startY];
 
     while (stack.length > 0) {
       const y = stack.pop();
       const x = stack.pop();
-      const pos = y * this.width + x;
+      const pos = y * w + x;
 
-      if (visited[pos]) continue;
-      visited[pos] = 1;
+      if (state[pos] !== 0) continue;
 
       const idx = pos * 4;
       const dr = data[idx] - tr;
@@ -906,24 +926,69 @@ class CanvasManager {
       const diffSq = dr * dr + dg * dg + db * db;
 
       if (diffSq <= tolSq) {
+        state[pos] = 2;
         data[idx] = fill.r;
         data[idx + 1] = fill.g;
         data[idx + 2] = fill.b;
         data[idx + 3] = fill.a;
 
-        if (x > 0 && !visited[pos - 1]) {
-          stack.push(x - 1, y);
-        }
-        if (x < this.width - 1 && !visited[pos + 1]) {
-          stack.push(x + 1, y);
-        }
-        if (y > 0 && !visited[pos - this.width]) {
-          stack.push(x, y - 1);
-        }
-        if (y < this.height - 1 && !visited[pos + this.width]) {
-          stack.push(x, y + 1);
+        if (x > 0 && state[pos - 1] === 0) stack.push(x - 1, y);
+        if (x < w - 1 && state[pos + 1] === 0) stack.push(x + 1, y);
+        if (y > 0 && state[pos - w] === 0) stack.push(x, y - 1);
+        if (y < h - 1 && state[pos + w] === 0) stack.push(x, y + 1);
+      } else {
+        state[pos] = 1;
+        fringeCandidates.push(pos);
+      }
+    }
+
+    // Mezcla proporcional en 1px de borde suavizado sin invadir trazos sólidos
+    const updates = [];
+    const deltaR = fill.r - tr;
+    const deltaG = fill.g - tg;
+    const deltaB = fill.b - tb;
+
+    for (let i = 0; i < fringeCandidates.length; i++) {
+      const pos = fringeCandidates[i];
+      const x = pos % w;
+      const y = (pos - x) / w;
+      const idx = pos * 4;
+
+      const dP = Math.hypot(data[idx] - tr, data[idx + 1] - tg, data[idx + 2] - tb);
+      let maxDN = dP;
+
+      for (let dy = -1; dy <= 1; dy++) {
+        const ny = y + dy;
+        if (ny < 0 || ny >= h) continue;
+        for (let dx = -1; dx <= 1; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          const nx = x + dx;
+          if (nx < 0 || nx >= w) continue;
+          const npos = ny * w + nx;
+          if (state[npos] === 2) continue;
+          const nidx = npos * 4;
+          const dN = Math.hypot(data[nidx] - tr, data[nidx + 1] - tg, data[nidx + 2] - tb);
+          if (dN > maxDN) maxDN = dN;
         }
       }
+
+      if (maxDN > dP + 8) {
+        const alpha = 1 - dP / maxDN;
+        updates.push(
+          pos,
+          Math.max(0, Math.min(255, Math.round(data[idx] + alpha * deltaR))),
+          Math.max(0, Math.min(255, Math.round(data[idx + 1] + alpha * deltaG))),
+          Math.max(0, Math.min(255, Math.round(data[idx + 2] + alpha * deltaB)))
+        );
+      }
+    }
+
+    for (let i = 0; i < updates.length; i += 4) {
+      const idx = updates[i] * 4;
+      data[idx] = updates[i + 1];
+      data[idx + 1] = updates[i + 2];
+      data[idx + 2] = updates[i + 3];
+      data[idx + 3] = fill.a;
     }
 
     this.ctx.putImageData(imgData, 0, 0);
@@ -966,8 +1031,11 @@ const I18N = {
     circle: 'Círculo',
     mirror: 'Espejo',
     undo: 'Deshacer',
+    redo: 'Rehacer',
     clear: 'Limpiar',
     thickness: 'Grosor',
+    colorWheelTitle: 'Rueda cromática',
+    brightness: 'Brillo',
     shieldOptional: 'Escudo opcional',
     shieldRequired: 'Escudo obligatorio',
     noShield: 'Sin escudo',
@@ -1033,8 +1101,11 @@ const I18N = {
     circle: 'Circle',
     mirror: 'Mirror',
     undo: 'Undo',
+    redo: 'Redo',
     clear: 'Clear',
     thickness: 'Thickness',
+    colorWheelTitle: 'Color Wheel',
+    brightness: 'Brightness',
     shieldOptional: 'Shield optional',
     shieldRequired: 'Shield required',
     noShield: 'No shield',
@@ -1158,6 +1229,7 @@ class FlagGame {
     this.mirrorBadge = document.getElementById('mirror-badge');
     this.mirrorIcon = document.getElementById('mirror-icon');
     this.undoBtn = document.getElementById('btn-undo');
+    this.redoBtn = document.getElementById('btn-redo');
     this.clearBtn = document.getElementById('btn-clear');
 
     // Nombres de herramientas (I18N)
@@ -1168,6 +1240,7 @@ class FlagGame {
     this.toolNameCircle = document.getElementById('tool-name-circle');
     this.toolNameMirror = document.getElementById('tool-name-mirror');
     this.toolNameUndo = document.getElementById('tool-name-undo');
+    this.toolNameRedo = document.getElementById('tool-name-redo');
     this.toolNameClear = document.getElementById('tool-name-clear');
 
     // Grosor
@@ -1176,11 +1249,20 @@ class FlagGame {
     this.brushSizeVal = document.getElementById('brush-size-val');
     this.brushDot = document.getElementById('brush-dot');
 
-    // Paleta y círculo cromático
+    // Paleta y rueda cromática personalizada
     this.colorSwatches = document.querySelectorAll('.color-swatch[data-color]');
     this.activeColorSwatch = document.getElementById('active-color-swatch');
     this.colorWheelBtn = document.getElementById('color-wheel-btn');
-    this.customColorPicker = document.getElementById('custom-color-picker');
+    this.colorPickerPopover = document.getElementById('custom-color-popover');
+    this.colorPickerClose = document.getElementById('color-picker-close');
+    this.colorWheelCanvas = document.getElementById('color-wheel-canvas');
+    this.colorWheelCursor = document.getElementById('color-wheel-cursor');
+    this.colorBrightnessSlider = document.getElementById('color-brightness-slider');
+    this.colorHexInput = document.getElementById('color-hex-input');
+    this.colorPickerPreview = document.getElementById('color-picker-preview');
+    this.lblColorWheelTitle = document.getElementById('lbl-color-wheel-title');
+    this.lblColorBrightness = document.getElementById('lbl-color-brightness');
+    this.pickerHSV = { h: 353, s: 92, v: 81 };
 
     // Botón de evaluar
     this.submitBtn = document.getElementById('submit-btn');
@@ -1259,6 +1341,7 @@ class FlagGame {
       height: 200,
       onStateChange: (state) => {
         this.undoBtn.disabled = !state.canUndo;
+        if (this.redoBtn) this.redoBtn.disabled = !state.canRedo;
         this.updateMirrorUI(state.mirrorMode);
       }
     });
@@ -1393,8 +1476,11 @@ class FlagGame {
     this.toolNameCircle.textContent = t.circle;
     this.toolNameMirror.textContent = t.mirror;
     this.toolNameUndo.textContent = t.undo;
+    if (this.toolNameRedo) this.toolNameRedo.textContent = t.redo;
     this.toolNameClear.textContent = t.clear;
     this.lblThickness.textContent = t.thickness;
+    if (this.lblColorWheelTitle) this.lblColorWheelTitle.textContent = t.colorWheelTitle;
+    if (this.lblColorBrightness) this.lblColorBrightness.textContent = t.brightness;
 
     // Modal resultados
     this.lblYourDrawing.textContent = t.yourDrawing;
@@ -1804,8 +1890,11 @@ class FlagGame {
       });
     }
 
-    // Deshacer y Limpiar
+    // Deshacer, Rehacer y Limpiar
     this.undoBtn.addEventListener('click', () => this.canvasManager.undo());
+    if (this.redoBtn) {
+      this.redoBtn.addEventListener('click', () => this.canvasManager.redo());
+    }
     this.clearBtn.addEventListener('click', () => this.canvasManager.clear());
 
     // Control de grosor del trazo
@@ -1822,22 +1911,8 @@ class FlagGame {
       });
     });
 
-    // Disparador del selector cromático
-    if (this.colorWheelBtn && this.customColorPicker) {
-      this.colorWheelBtn.addEventListener('click', (e) => {
-        if (e.target !== this.customColorPicker) {
-          this.customColorPicker.click();
-        }
-      });
-
-      const handlePickerChange = (e) => {
-        const color = e.target.value;
-        this.updateColor(color);
-      };
-
-      this.customColorPicker.addEventListener('input', handlePickerChange);
-      this.customColorPicker.addEventListener('change', handlePickerChange);
-    }
+    // Rueda cromática personalizada
+    this.initColorWheel();
 
     // Evaluar / Submit
     this.submitBtn.addEventListener('click', () => {
@@ -1868,7 +1943,17 @@ class FlagGame {
 
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault();
-        this.canvasManager.undo();
+        if (e.shiftKey) {
+          this.canvasManager.redo();
+        } else {
+          this.canvasManager.undo();
+        }
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        this.canvasManager.redo();
         return;
       }
 
@@ -1893,7 +1978,9 @@ class FlagGame {
           this.evaluateDrawing();
         }
       } else if (e.key === 'Escape') {
-        if (!this.resultsModal.classList.contains('hidden')) {
+        if (this.colorPickerPopover && !this.colorPickerPopover.classList.contains('hidden')) {
+          this.closeColorPopover();
+        } else if (!this.resultsModal.classList.contains('hidden')) {
           this.closeModal();
         } else if (!this.settingsModal.classList.contains('hidden')) {
           this.closeSettingsModal();
@@ -1949,16 +2036,16 @@ class FlagGame {
     this.brushDot.style.height = `${dotSize}px`;
   }
 
-  updateColor(color) {
+  updateColor(color, syncWheel = true) {
     this.canvasManager.setColor(color);
     this.brushDot.style.backgroundColor = color;
 
-    if (this.customColorPicker) {
-      this.customColorPicker.value = color;
-    }
-
     if (this.activeColorSwatch) {
       this.activeColorSwatch.style.setProperty('--swatch-color', color);
+    }
+
+    if (syncWheel && this.colorWheelCanvas) {
+      this.syncWheelFromHex(color);
     }
 
     let foundMatch = false;
@@ -1977,6 +2064,216 @@ class FlagGame {
     } else if (this.activeColorSwatch) {
       this.activeColorSwatch.classList.remove('active-custom');
     }
+  }
+
+  initColorWheel() {
+    if (!this.colorWheelBtn || !this.colorPickerPopover || !this.colorWheelCanvas) return;
+
+    this.colorWheelBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isHidden = this.colorPickerPopover.classList.contains('hidden');
+      if (isHidden) {
+        this.openColorPopover();
+      } else {
+        this.closeColorPopover();
+      }
+    });
+
+    if (this.colorPickerClose) {
+      this.colorPickerClose.addEventListener('click', () => this.closeColorPopover());
+    }
+
+    document.addEventListener('click', (e) => {
+      if (
+        !this.colorPickerPopover.classList.contains('hidden') &&
+        !this.colorPickerPopover.contains(e.target) &&
+        !this.colorWheelBtn.contains(e.target)
+      ) {
+        this.closeColorPopover();
+      }
+    });
+
+    let isDraggingWheel = false;
+    const pickFromPointer = (e) => {
+      const rect = this.colorWheelCanvas.getBoundingClientRect();
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      const dx = e.clientX - rect.left - cx;
+      const dy = e.clientY - rect.top - cy;
+      const radius = Math.min(cx, cy);
+      const dist = Math.min(Math.hypot(dx, dy), radius);
+      const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+
+      this.pickerHSV.h = (angle + 360) % 360;
+      this.pickerHSV.s = (dist / radius) * 100;
+      this.applyPickerHSV();
+    };
+
+    this.colorWheelCanvas.addEventListener('pointerdown', (e) => {
+      isDraggingWheel = true;
+      try { this.colorWheelCanvas.setPointerCapture(e.pointerId); } catch (_) {}
+      pickFromPointer(e);
+    });
+
+    this.colorWheelCanvas.addEventListener('pointermove', (e) => {
+      if (isDraggingWheel) pickFromPointer(e);
+    });
+
+    const stopWheelDrag = (e) => {
+      if (!isDraggingWheel) return;
+      isDraggingWheel = false;
+      try { this.colorWheelCanvas.releasePointerCapture(e.pointerId); } catch (_) {}
+    };
+    this.colorWheelCanvas.addEventListener('pointerup', stopWheelDrag);
+    this.colorWheelCanvas.addEventListener('pointercancel', stopWheelDrag);
+
+    if (this.colorBrightnessSlider) {
+      this.colorBrightnessSlider.addEventListener('input', (e) => {
+        this.pickerHSV.v = parseInt(e.target.value, 10);
+        this.drawColorWheel(this.pickerHSV.v);
+        this.applyPickerHSV();
+      });
+    }
+
+    if (this.colorHexInput) {
+      this.colorHexInput.addEventListener('input', (e) => {
+        let val = e.target.value.trim();
+        if (!val.startsWith('#')) val = '#' + val;
+        if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+          this.updateColor(val.toUpperCase(), true);
+        }
+      });
+    }
+
+    this.drawColorWheel(this.pickerHSV.v);
+    this.updateWheelCursor();
+  }
+
+  openColorPopover() {
+    if (!this.colorPickerPopover) return;
+    this.colorPickerPopover.classList.remove('hidden');
+    this.colorWheelBtn.setAttribute('aria-expanded', 'true');
+    this.drawColorWheel(this.pickerHSV.v);
+    this.updateWheelCursor();
+  }
+
+  closeColorPopover() {
+    if (!this.colorPickerPopover) return;
+    this.colorPickerPopover.classList.add('hidden');
+    this.colorWheelBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  drawColorWheel(brightness = 100) {
+    if (!this.colorWheelCanvas) return;
+    const ctx = this.colorWheelCanvas.getContext('2d');
+    const w = this.colorWheelCanvas.width;
+    const h = this.colorWheelCanvas.height;
+    const cx = w / 2;
+    const cy = h / 2;
+    const radius = Math.min(cx, cy);
+    const imgData = ctx.createImageData(w, h);
+    const data = imgData.data;
+
+    for (let y = 0; y < h; y++) {
+      const dy = y - cy;
+      for (let x = 0; x < w; x++) {
+        const dx = x - cx;
+        const dist = Math.hypot(dx, dy);
+        if (dist <= radius) {
+          const hue = ((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360;
+          const sat = (dist / radius) * 100;
+          const { r, g, b } = this.hsvToRgb(hue, sat, brightness);
+          const idx = (y * w + x) * 4;
+          data[idx] = r;
+          data[idx + 1] = g;
+          data[idx + 2] = b;
+          data[idx + 3] = dist > radius - 1 ? Math.round((radius - dist) * 255) : 255;
+        }
+      }
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+  }
+
+  applyPickerHSV() {
+    const { r, g, b } = this.hsvToRgb(this.pickerHSV.h, this.pickerHSV.s, this.pickerHSV.v);
+    const hex = this.rgbToHex(r, g, b);
+    if (this.colorPickerPreview) this.colorPickerPreview.style.backgroundColor = hex;
+    if (this.colorHexInput) this.colorHexInput.value = hex;
+    this.updateWheelCursor();
+    this.updateColor(hex, false);
+  }
+
+  syncWheelFromHex(hex) {
+    if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    this.pickerHSV = this.rgbToHsv(r, g, b);
+    if (this.colorBrightnessSlider) {
+      this.colorBrightnessSlider.value = Math.round(this.pickerHSV.v);
+    }
+    if (this.colorPickerPreview) this.colorPickerPreview.style.backgroundColor = hex.toUpperCase();
+    if (this.colorHexInput) this.colorHexInput.value = hex.toUpperCase();
+    this.drawColorWheel(this.pickerHSV.v);
+    this.updateWheelCursor();
+  }
+
+  updateWheelCursor() {
+    if (!this.colorWheelCursor || !this.colorWheelCanvas) return;
+    const radius = this.colorWheelCanvas.width / 2;
+    const rDist = (this.pickerHSV.s / 100) * radius;
+    const rad = (this.pickerHSV.h * Math.PI) / 180;
+    const x = radius + Math.cos(rad) * rDist;
+    const y = radius + Math.sin(rad) * rDist;
+    this.colorWheelCursor.style.left = `${(x / this.colorWheelCanvas.width) * 100}%`;
+    this.colorWheelCursor.style.top = `${(y / this.colorWheelCanvas.height) * 100}%`;
+  }
+
+  hsvToRgb(h, s, v) {
+    const sNorm = s / 100;
+    const vNorm = v / 100;
+    const c = vNorm * sNorm;
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    const m = vNorm - c;
+    let r1 = 0, g1 = 0, b1 = 0;
+
+    if (h < 60) { r1 = c; g1 = x; }
+    else if (h < 120) { r1 = x; g1 = c; }
+    else if (h < 180) { g1 = c; b1 = x; }
+    else if (h < 240) { g1 = x; b1 = c; }
+    else if (h < 300) { r1 = x; b1 = c; }
+    else { r1 = c; b1 = x; }
+
+    return {
+      r: Math.round((r1 + m) * 255),
+      g: Math.round((g1 + m) * 255),
+      b: Math.round((b1 + m) * 255)
+    };
+  }
+
+  rgbToHsv(r, g, b) {
+    const rNorm = r / 255;
+    const gNorm = g / 255;
+    const bNorm = b / 255;
+    const max = Math.max(rNorm, gNorm, bNorm);
+    const min = Math.min(rNorm, gNorm, bNorm);
+    const d = max - min;
+    let h = 0;
+    if (d !== 0) {
+      if (max === rNorm) h = ((gNorm - bNorm) / d) % 6;
+      else if (max === gNorm) h = (bNorm - rNorm) / d + 2;
+      else h = (rNorm - gNorm) / d + 4;
+      h = Math.round(h * 60);
+      if (h < 0) h += 360;
+    }
+    const s = max === 0 ? 0 : (d / max) * 100;
+    const v = max * 100;
+    return { h, s, v };
+  }
+
+  rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map((c) => c.toString(16).padStart(2, '0')).join('').toUpperCase();
   }
 
   updateMirrorUI(mode) {

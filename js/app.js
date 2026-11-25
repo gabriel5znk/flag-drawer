@@ -37,8 +37,11 @@ const I18N = {
     circle: 'Círculo',
     mirror: 'Espejo',
     undo: 'Deshacer',
+    redo: 'Rehacer',
     clear: 'Limpiar',
     thickness: 'Grosor',
+    colorWheelTitle: 'Rueda cromática',
+    brightness: 'Brillo',
     shieldOptional: 'Escudo opcional',
     shieldRequired: 'Escudo obligatorio',
     noShield: 'Sin escudo',
@@ -104,8 +107,11 @@ const I18N = {
     circle: 'Circle',
     mirror: 'Mirror',
     undo: 'Undo',
+    redo: 'Redo',
     clear: 'Clear',
     thickness: 'Thickness',
+    colorWheelTitle: 'Color Wheel',
+    brightness: 'Brightness',
     shieldOptional: 'Shield optional',
     shieldRequired: 'Shield required',
     noShield: 'No shield',
@@ -229,6 +235,7 @@ class FlagGame {
     this.mirrorBadge = document.getElementById('mirror-badge');
     this.mirrorIcon = document.getElementById('mirror-icon');
     this.undoBtn = document.getElementById('btn-undo');
+    this.redoBtn = document.getElementById('btn-redo');
     this.clearBtn = document.getElementById('btn-clear');
 
     // Nombres de herramientas (I18N)
@@ -239,6 +246,7 @@ class FlagGame {
     this.toolNameCircle = document.getElementById('tool-name-circle');
     this.toolNameMirror = document.getElementById('tool-name-mirror');
     this.toolNameUndo = document.getElementById('tool-name-undo');
+    this.toolNameRedo = document.getElementById('tool-name-redo');
     this.toolNameClear = document.getElementById('tool-name-clear');
 
     // Grosor
@@ -247,11 +255,20 @@ class FlagGame {
     this.brushSizeVal = document.getElementById('brush-size-val');
     this.brushDot = document.getElementById('brush-dot');
 
-    // Paleta y círculo cromático
+    // Paleta y rueda cromática personalizada
     this.colorSwatches = document.querySelectorAll('.color-swatch[data-color]');
     this.activeColorSwatch = document.getElementById('active-color-swatch');
     this.colorWheelBtn = document.getElementById('color-wheel-btn');
-    this.customColorPicker = document.getElementById('custom-color-picker');
+    this.colorPickerPopover = document.getElementById('custom-color-popover');
+    this.colorPickerClose = document.getElementById('color-picker-close');
+    this.colorWheelCanvas = document.getElementById('color-wheel-canvas');
+    this.colorWheelCursor = document.getElementById('color-wheel-cursor');
+    this.colorBrightnessSlider = document.getElementById('color-brightness-slider');
+    this.colorHexInput = document.getElementById('color-hex-input');
+    this.colorPickerPreview = document.getElementById('color-picker-preview');
+    this.lblColorWheelTitle = document.getElementById('lbl-color-wheel-title');
+    this.lblColorBrightness = document.getElementById('lbl-color-brightness');
+    this.pickerHSV = { h: 353, s: 92, v: 81 };
 
     // Botón de evaluar
     this.submitBtn = document.getElementById('submit-btn');
@@ -330,6 +347,7 @@ class FlagGame {
       height: 200,
       onStateChange: (state) => {
         this.undoBtn.disabled = !state.canUndo;
+        if (this.redoBtn) this.redoBtn.disabled = !state.canRedo;
         this.updateMirrorUI(state.mirrorMode);
       }
     });
@@ -464,8 +482,11 @@ class FlagGame {
     this.toolNameCircle.textContent = t.circle;
     this.toolNameMirror.textContent = t.mirror;
     this.toolNameUndo.textContent = t.undo;
+    if (this.toolNameRedo) this.toolNameRedo.textContent = t.redo;
     this.toolNameClear.textContent = t.clear;
     this.lblThickness.textContent = t.thickness;
+    if (this.lblColorWheelTitle) this.lblColorWheelTitle.textContent = t.colorWheelTitle;
+    if (this.lblColorBrightness) this.lblColorBrightness.textContent = t.brightness;
 
     // Modal resultados
     this.lblYourDrawing.textContent = t.yourDrawing;
@@ -875,8 +896,11 @@ class FlagGame {
       });
     }
 
-    // Deshacer y Limpiar
+    // Deshacer, Rehacer y Limpiar
     this.undoBtn.addEventListener('click', () => this.canvasManager.undo());
+    if (this.redoBtn) {
+      this.redoBtn.addEventListener('click', () => this.canvasManager.redo());
+    }
     this.clearBtn.addEventListener('click', () => this.canvasManager.clear());
 
     // Control de grosor del trazo
@@ -893,22 +917,8 @@ class FlagGame {
       });
     });
 
-    // Disparador del selector cromático
-    if (this.colorWheelBtn && this.customColorPicker) {
-      this.colorWheelBtn.addEventListener('click', (e) => {
-        if (e.target !== this.customColorPicker) {
-          this.customColorPicker.click();
-        }
-      });
-
-      const handlePickerChange = (e) => {
-        const color = e.target.value;
-        this.updateColor(color);
-      };
-
-      this.customColorPicker.addEventListener('input', handlePickerChange);
-      this.customColorPicker.addEventListener('change', handlePickerChange);
-    }
+    // Rueda cromática personalizada
+    this.initColorWheel();
 
     // Evaluar / Submit
     this.submitBtn.addEventListener('click', () => {
@@ -939,7 +949,17 @@ class FlagGame {
 
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault();
-        this.canvasManager.undo();
+        if (e.shiftKey) {
+          this.canvasManager.redo();
+        } else {
+          this.canvasManager.undo();
+        }
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        this.canvasManager.redo();
         return;
       }
 
@@ -964,7 +984,9 @@ class FlagGame {
           this.evaluateDrawing();
         }
       } else if (e.key === 'Escape') {
-        if (!this.resultsModal.classList.contains('hidden')) {
+        if (this.colorPickerPopover && !this.colorPickerPopover.classList.contains('hidden')) {
+          this.closeColorPopover();
+        } else if (!this.resultsModal.classList.contains('hidden')) {
           this.closeModal();
         } else if (!this.settingsModal.classList.contains('hidden')) {
           this.closeSettingsModal();
@@ -1020,16 +1042,16 @@ class FlagGame {
     this.brushDot.style.height = `${dotSize}px`;
   }
 
-  updateColor(color) {
+  updateColor(color, syncWheel = true) {
     this.canvasManager.setColor(color);
     this.brushDot.style.backgroundColor = color;
 
-    if (this.customColorPicker) {
-      this.customColorPicker.value = color;
-    }
-
     if (this.activeColorSwatch) {
       this.activeColorSwatch.style.setProperty('--swatch-color', color);
+    }
+
+    if (syncWheel && this.colorWheelCanvas) {
+      this.syncWheelFromHex(color);
     }
 
     let foundMatch = false;
@@ -1048,6 +1070,216 @@ class FlagGame {
     } else if (this.activeColorSwatch) {
       this.activeColorSwatch.classList.remove('active-custom');
     }
+  }
+
+  initColorWheel() {
+    if (!this.colorWheelBtn || !this.colorPickerPopover || !this.colorWheelCanvas) return;
+
+    this.colorWheelBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isHidden = this.colorPickerPopover.classList.contains('hidden');
+      if (isHidden) {
+        this.openColorPopover();
+      } else {
+        this.closeColorPopover();
+      }
+    });
+
+    if (this.colorPickerClose) {
+      this.colorPickerClose.addEventListener('click', () => this.closeColorPopover());
+    }
+
+    document.addEventListener('click', (e) => {
+      if (
+        !this.colorPickerPopover.classList.contains('hidden') &&
+        !this.colorPickerPopover.contains(e.target) &&
+        !this.colorWheelBtn.contains(e.target)
+      ) {
+        this.closeColorPopover();
+      }
+    });
+
+    let isDraggingWheel = false;
+    const pickFromPointer = (e) => {
+      const rect = this.colorWheelCanvas.getBoundingClientRect();
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      const dx = e.clientX - rect.left - cx;
+      const dy = e.clientY - rect.top - cy;
+      const radius = Math.min(cx, cy);
+      const dist = Math.min(Math.hypot(dx, dy), radius);
+      const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+
+      this.pickerHSV.h = (angle + 360) % 360;
+      this.pickerHSV.s = (dist / radius) * 100;
+      this.applyPickerHSV();
+    };
+
+    this.colorWheelCanvas.addEventListener('pointerdown', (e) => {
+      isDraggingWheel = true;
+      try { this.colorWheelCanvas.setPointerCapture(e.pointerId); } catch (_) {}
+      pickFromPointer(e);
+    });
+
+    this.colorWheelCanvas.addEventListener('pointermove', (e) => {
+      if (isDraggingWheel) pickFromPointer(e);
+    });
+
+    const stopWheelDrag = (e) => {
+      if (!isDraggingWheel) return;
+      isDraggingWheel = false;
+      try { this.colorWheelCanvas.releasePointerCapture(e.pointerId); } catch (_) {}
+    };
+    this.colorWheelCanvas.addEventListener('pointerup', stopWheelDrag);
+    this.colorWheelCanvas.addEventListener('pointercancel', stopWheelDrag);
+
+    if (this.colorBrightnessSlider) {
+      this.colorBrightnessSlider.addEventListener('input', (e) => {
+        this.pickerHSV.v = parseInt(e.target.value, 10);
+        this.drawColorWheel(this.pickerHSV.v);
+        this.applyPickerHSV();
+      });
+    }
+
+    if (this.colorHexInput) {
+      this.colorHexInput.addEventListener('input', (e) => {
+        let val = e.target.value.trim();
+        if (!val.startsWith('#')) val = '#' + val;
+        if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+          this.updateColor(val.toUpperCase(), true);
+        }
+      });
+    }
+
+    this.drawColorWheel(this.pickerHSV.v);
+    this.updateWheelCursor();
+  }
+
+  openColorPopover() {
+    if (!this.colorPickerPopover) return;
+    this.colorPickerPopover.classList.remove('hidden');
+    this.colorWheelBtn.setAttribute('aria-expanded', 'true');
+    this.drawColorWheel(this.pickerHSV.v);
+    this.updateWheelCursor();
+  }
+
+  closeColorPopover() {
+    if (!this.colorPickerPopover) return;
+    this.colorPickerPopover.classList.add('hidden');
+    this.colorWheelBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  drawColorWheel(brightness = 100) {
+    if (!this.colorWheelCanvas) return;
+    const ctx = this.colorWheelCanvas.getContext('2d');
+    const w = this.colorWheelCanvas.width;
+    const h = this.colorWheelCanvas.height;
+    const cx = w / 2;
+    const cy = h / 2;
+    const radius = Math.min(cx, cy);
+    const imgData = ctx.createImageData(w, h);
+    const data = imgData.data;
+
+    for (let y = 0; y < h; y++) {
+      const dy = y - cy;
+      for (let x = 0; x < w; x++) {
+        const dx = x - cx;
+        const dist = Math.hypot(dx, dy);
+        if (dist <= radius) {
+          const hue = ((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360;
+          const sat = (dist / radius) * 100;
+          const { r, g, b } = this.hsvToRgb(hue, sat, brightness);
+          const idx = (y * w + x) * 4;
+          data[idx] = r;
+          data[idx + 1] = g;
+          data[idx + 2] = b;
+          data[idx + 3] = dist > radius - 1 ? Math.round((radius - dist) * 255) : 255;
+        }
+      }
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+  }
+
+  applyPickerHSV() {
+    const { r, g, b } = this.hsvToRgb(this.pickerHSV.h, this.pickerHSV.s, this.pickerHSV.v);
+    const hex = this.rgbToHex(r, g, b);
+    if (this.colorPickerPreview) this.colorPickerPreview.style.backgroundColor = hex;
+    if (this.colorHexInput) this.colorHexInput.value = hex;
+    this.updateWheelCursor();
+    this.updateColor(hex, false);
+  }
+
+  syncWheelFromHex(hex) {
+    if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    this.pickerHSV = this.rgbToHsv(r, g, b);
+    if (this.colorBrightnessSlider) {
+      this.colorBrightnessSlider.value = Math.round(this.pickerHSV.v);
+    }
+    if (this.colorPickerPreview) this.colorPickerPreview.style.backgroundColor = hex.toUpperCase();
+    if (this.colorHexInput) this.colorHexInput.value = hex.toUpperCase();
+    this.drawColorWheel(this.pickerHSV.v);
+    this.updateWheelCursor();
+  }
+
+  updateWheelCursor() {
+    if (!this.colorWheelCursor || !this.colorWheelCanvas) return;
+    const radius = this.colorWheelCanvas.width / 2;
+    const rDist = (this.pickerHSV.s / 100) * radius;
+    const rad = (this.pickerHSV.h * Math.PI) / 180;
+    const x = radius + Math.cos(rad) * rDist;
+    const y = radius + Math.sin(rad) * rDist;
+    this.colorWheelCursor.style.left = `${(x / this.colorWheelCanvas.width) * 100}%`;
+    this.colorWheelCursor.style.top = `${(y / this.colorWheelCanvas.height) * 100}%`;
+  }
+
+  hsvToRgb(h, s, v) {
+    const sNorm = s / 100;
+    const vNorm = v / 100;
+    const c = vNorm * sNorm;
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    const m = vNorm - c;
+    let r1 = 0, g1 = 0, b1 = 0;
+
+    if (h < 60) { r1 = c; g1 = x; }
+    else if (h < 120) { r1 = x; g1 = c; }
+    else if (h < 180) { g1 = c; b1 = x; }
+    else if (h < 240) { g1 = x; b1 = c; }
+    else if (h < 300) { r1 = x; b1 = c; }
+    else { r1 = c; b1 = x; }
+
+    return {
+      r: Math.round((r1 + m) * 255),
+      g: Math.round((g1 + m) * 255),
+      b: Math.round((b1 + m) * 255)
+    };
+  }
+
+  rgbToHsv(r, g, b) {
+    const rNorm = r / 255;
+    const gNorm = g / 255;
+    const bNorm = b / 255;
+    const max = Math.max(rNorm, gNorm, bNorm);
+    const min = Math.min(rNorm, gNorm, bNorm);
+    const d = max - min;
+    let h = 0;
+    if (d !== 0) {
+      if (max === rNorm) h = ((gNorm - bNorm) / d) % 6;
+      else if (max === gNorm) h = (bNorm - rNorm) / d + 2;
+      else h = (rNorm - gNorm) / d + 4;
+      h = Math.round(h * 60);
+      if (h < 0) h += 360;
+    }
+    const s = max === 0 ? 0 : (d / max) * 100;
+    const v = max * 100;
+    return { h, s, v };
+  }
+
+  rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map((c) => c.toString(16).padStart(2, '0')).join('').toUpperCase();
   }
 
   updateMirrorUI(mode) {
