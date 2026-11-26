@@ -1,0 +1,1100 @@
+{
+  "us": {
+    "popTier": 1,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "gb": {
+    "popTier": 1,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "fr": {
+    "popTier": 1,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "de": {
+    "popTier": 1,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "it": {
+    "popTier": 1,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "es": {
+    "popTier": 1,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        50,
+        115
+      ],
+      "y": [
+        70,
+        135
+      ],
+      "fill": "#FFD100"
+    }
+  },
+  "jp": {
+    "popTier": 1,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "br": {
+    "popTier": 1,
+    "designTier": 4,
+    "hasShield": false,
+    "shield": null
+  },
+  "ar": {
+    "popTier": 1,
+    "designTier": 2,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        120,
+        180
+      ],
+      "y": [
+        75,
+        125
+      ],
+      "fill": "#FFFFFF"
+    }
+  },
+  "mx": {
+    "popTier": 1,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        115,
+        185
+      ],
+      "y": [
+        65,
+        135
+      ],
+      "fill": "#FFFFFF"
+    }
+  },
+  "ca": {
+    "popTier": 1,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "cn": {
+    "popTier": 1,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "ru": {
+    "popTier": 1,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "au": {
+    "popTier": 1,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "co": {
+    "popTier": 1,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "cl": {
+    "popTier": 1,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "pe": {
+    "popTier": 1,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        115,
+        185
+      ],
+      "y": [
+        70,
+        130
+      ],
+      "fill": "#FFFFFF"
+    }
+  },
+  "pt": {
+    "popTier": 1,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        85,
+        155
+      ],
+      "y": [
+        65,
+        135
+      ],
+      "fill": "#009A44"
+    }
+  },
+  "nl": {
+    "popTier": 1,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "ch": {
+    "popTier": 1,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "se": {
+    "popTier": 1,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "kr": {
+    "popTier": 1,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "tr": {
+    "popTier": 1,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "gr": {
+    "popTier": 1,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "in": {
+    "popTier": 1,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "eg": {
+    "popTier": 1,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        120,
+        180
+      ],
+      "y": [
+        75,
+        125
+      ],
+      "fill": "#FFFFFF"
+    }
+  },
+  "cu": {
+    "popTier": 1,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "uy": {
+    "popTier": 1,
+    "designTier": 3,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        0,
+        95
+      ],
+      "y": [
+        0,
+        90
+      ],
+      "fill": "#FFFFFF"
+    }
+  },
+  "be": {
+    "popTier": 1,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "ie": {
+    "popTier": 1,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "dk": {
+    "popTier": 1,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "pl": {
+    "popTier": 1,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "at": {
+    "popTier": 1,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "za": {
+    "popTier": 1,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "no": {
+    "popTier": 1,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "ua": {
+    "popTier": 2,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "id": {
+    "popTier": 2,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "fi": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "nz": {
+    "popTier": 2,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "jm": {
+    "popTier": 2,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "ve": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "cr": {
+    "popTier": 2,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        50,
+        105
+      ],
+      "y": [
+        75,
+        125
+      ],
+      "fill": "#CE1126"
+    }
+  },
+  "sa": {
+    "popTier": 2,
+    "designTier": 4,
+    "hasShield": false,
+    "shield": null
+  },
+  "ma": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "th": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "ph": {
+    "popTier": 2,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "il": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "cz": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "hu": {
+    "popTier": 2,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "ro": {
+    "popTier": 2,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "ng": {
+    "popTier": 2,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "vn": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "pa": {
+    "popTier": 2,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "ec": {
+    "popTier": 2,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        115,
+        185
+      ],
+      "y": [
+        70,
+        135
+      ],
+      "fill": "#002654"
+    }
+  },
+  "bo": {
+    "popTier": 2,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        115,
+        185
+      ],
+      "y": [
+        70,
+        130
+      ],
+      "fill": "#FFD100"
+    }
+  },
+  "pk": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "sg": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "is": {
+    "popTier": 2,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "hr": {
+    "popTier": 2,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        115,
+        185
+      ],
+      "y": [
+        55,
+        145
+      ],
+      "fill": "#FFFFFF"
+    }
+  },
+  "ae": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "qa": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "ke": {
+    "popTier": 2,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "lb": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "mc": {
+    "popTier": 2,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "do": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        125,
+        175
+      ],
+      "y": [
+        75,
+        125
+      ],
+      "fill": "#FFFFFF"
+    }
+  },
+  "gt": {
+    "popTier": 2,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        115,
+        185
+      ],
+      "y": [
+        70,
+        130
+      ],
+      "fill": "#FFFFFF"
+    }
+  },
+  "py": {
+    "popTier": 2,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        120,
+        180
+      ],
+      "y": [
+        75,
+        125
+      ],
+      "fill": "#FFFFFF"
+    }
+  },
+  "sk": {
+    "popTier": 2,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        45,
+        115
+      ],
+      "y": [
+        40,
+        140
+      ],
+      "fill": "#002654"
+    }
+  },
+  "rs": {
+    "popTier": 2,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        60,
+        125
+      ],
+      "y": [
+        50,
+        150
+      ],
+      "fill": "#002654"
+    }
+  },
+  "bg": {
+    "popTier": 2,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "gh": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "ee": {
+    "popTier": 3,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "lt": {
+    "popTier": 3,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "lv": {
+    "popTier": 3,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "si": {
+    "popTier": 3,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        50,
+        105
+      ],
+      "y": [
+        30,
+        90
+      ],
+      "fill": "#FFFFFF"
+    }
+  },
+  "al": {
+    "popTier": 3,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "cy": {
+    "popTier": 3,
+    "designTier": 4,
+    "hasShield": false,
+    "shield": null
+  },
+  "ge": {
+    "popTier": 3,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "kz": {
+    "popTier": 3,
+    "designTier": 4,
+    "hasShield": false,
+    "shield": null
+  },
+  "np": {
+    "popTier": 3,
+    "designTier": 4,
+    "hasShield": false,
+    "shield": null
+  },
+  "lk": {
+    "popTier": 3,
+    "designTier": 4,
+    "hasShield": false,
+    "shield": null
+  },
+  "my": {
+    "popTier": 3,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "jo": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "kw": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "ba": {
+    "popTier": 3,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "mk": {
+    "popTier": 3,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "tz": {
+    "popTier": 3,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "ug": {
+    "popTier": 3,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "ci": {
+    "popTier": 3,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "zw": {
+    "popTier": 3,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "tt": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "bs": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "gy": {
+    "popTier": 3,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "sr": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "bb": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "ag": {
+    "popTier": 3,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "bh": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "mz": {
+    "popTier": 3,
+    "designTier": 4,
+    "hasShield": false,
+    "shield": null
+  },
+  "lu": {
+    "popTier": 3,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "mt": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "sc": {
+    "popTier": 3,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "pg": {
+    "popTier": 3,
+    "designTier": 4,
+    "hasShield": false,
+    "shield": null
+  },
+  "mn": {
+    "popTier": 3,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "ye": {
+    "popTier": 3,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "td": {
+    "popTier": 3,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "gn": {
+    "popTier": 3,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "ml": {
+    "popTier": 3,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "ad": {
+    "popTier": 4,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        115,
+        185
+      ],
+      "y": [
+        70,
+        130
+      ],
+      "fill": "#FFD100"
+    }
+  },
+  "sm": {
+    "popTier": 4,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        115,
+        185
+      ],
+      "y": [
+        70,
+        130
+      ],
+      "fill": "#FFFFFF"
+    }
+  },
+  "va": {
+    "popTier": 4,
+    "designTier": 4,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        170,
+        260
+      ],
+      "y": [
+        60,
+        140
+      ],
+      "fill": "#FFFFFF"
+    }
+  },
+  "li": {
+    "popTier": 4,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "tv": {
+    "popTier": 4,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "nr": {
+    "popTier": 4,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "ki": {
+    "popTier": 4,
+    "designTier": 4,
+    "hasShield": false,
+    "shield": null
+  },
+  "pw": {
+    "popTier": 4,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "mh": {
+    "popTier": 4,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "fm": {
+    "popTier": 4,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "ws": {
+    "popTier": 4,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "to": {
+    "popTier": 4,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "vu": {
+    "popTier": 4,
+    "designTier": 4,
+    "hasShield": false,
+    "shield": null
+  },
+  "fj": {
+    "popTier": 4,
+    "designTier": 3,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        170,
+        260
+      ],
+      "y": [
+        70,
+        130
+      ],
+      "fill": "#75AADB"
+    }
+  },
+  "sb": {
+    "popTier": 4,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "bt": {
+    "popTier": 4,
+    "designTier": 4,
+    "hasShield": false,
+    "shield": null
+  },
+  "tm": {
+    "popTier": 4,
+    "designTier": 4,
+    "hasShield": false,
+    "shield": null
+  },
+  "kg": {
+    "popTier": 4,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "tj": {
+    "popTier": 4,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "uz": {
+    "popTier": 4,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "sz": {
+    "popTier": 4,
+    "designTier": 4,
+    "hasShield": false,
+    "shield": null
+  },
+  "ls": {
+    "popTier": 4,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "dj": {
+    "popTier": 4,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "km": {
+    "popTier": 4,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "st": {
+    "popTier": 4,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "cv": {
+    "popTier": 4,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "mu": {
+    "popTier": 4,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "bn": {
+    "popTier": 4,
+    "designTier": 3,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        115,
+        185
+      ],
+      "y": [
+        70,
+        130
+      ],
+      "fill": "#FFD100"
+    }
+  },
+  "tl": {
+    "popTier": 4,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "gd": {
+    "popTier": 4,
+    "designTier": 4,
+    "hasShield": false,
+    "shield": null
+  },
+  "lc": {
+    "popTier": 4,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "vc": {
+    "popTier": 4,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "dm": {
+    "popTier": 4,
+    "designTier": 4,
+    "hasShield": false,
+    "shield": null
+  },
+  "me": {
+    "popTier": 4,
+    "designTier": 2,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        115,
+        185
+      ],
+      "y": [
+        70,
+        130
+      ],
+      "fill": "#CE1126"
+    }
+  },
+  "md": {
+    "popTier": 4,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        115,
+        185
+      ],
+      "y": [
+        70,
+        130
+      ],
+      "fill": "#FFD100"
+    }
+  },
+  "ga": {
+    "popTier": 4,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  }
+}

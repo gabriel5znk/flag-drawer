@@ -173,250 +173,6 @@ const FLAGS = [
   { id: "ga", name: {"en": "Gabon", "es": "Gabón"}, popTier: 4, designTier: 1, ratio: 1.3333, aspectText: "4:3", url: "assets/flags/ga.svg", hasShield: false, shield: null },
 ];
 
-// --- COMPARATOR & COLOR ENGINE ---
-/**
- * Algoritmo de contraste y scoring pixel a pixel
- * Soporta Modo Normal (con perdón/máscara de escudos) y Modo Experto (con escudo obligatorio).
- */
-
-const DEFAULT_THRESHOLD = 45; // Tolerancia perfecta (distancia RGB donde aún es 100%)
-const MAX_COLOR_TOLERANCE = 135; // Límite máximo permisivo (por encima es 0%)
-
-/**
- * Devuelve la calificación cualitativa, medalla y mensaje de retroalimentación
- * según el porcentaje obtenido.
- */
-function getGradeInfo(score) {
-  if (score >= 90) {
-    return {
-      grade: 'S',
-      badge: 'Grade S',
-      color: '#10b981', // Emerald green
-      feedback: 'Perfect! Spot on.',
-      isPass: true
-    };
-  } else if (score >= 70) {
-    return {
-      grade: 'B',
-      badge: 'Grade B',
-      color: '#3b82f6', // Blue
-      feedback: 'Clearly recognisable, one element is off.',
-      isPass: true
-    };
-  } else if (score >= 40) {
-    return {
-      grade: 'C',
-      badge: 'Grade C',
-      color: '#f59e0b', // Amber
-      feedback: 'Good effort, but needs work.',
-      isPass: false
-    };
-  } else {
-    return {
-      grade: 'F',
-      badge: 'Grade F',
-      color: '#ef4444', // Red
-      feedback: 'Not quite, try practicing this one.',
-      isPass: false
-    };
-  }
-}
-
-function hexToRgb(hex) {
-  let c = hex.replace('#', '');
-  if (c.length === 3) {
-    c = c.split('').map((char) => char + char).join('');
-  }
-  const num = parseInt(c, 16);
-  return {
-    r: (num >> 16) & 255,
-    g: (num >> 8) & 255,
-    b: num & 255
-  };
-}
-
-/**
- * Carga una imagen de bandera en un lienzo fuera de pantalla (Offscreen Canvas)
- * normalizado a la resolución estándar (300 x 200).
- */
-function renderTargetFlag(flagUrl, width = 300, height = 200) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-
-    if (window.location && window.location.protocol.startsWith('http')) {
-      img.crossOrigin = 'Anonymous';
-    }
-
-    img.onload = () => {
-      const offscreenCanvas = document.createElement('canvas');
-      offscreenCanvas.width = width;
-      offscreenCanvas.height = height;
-      const ctx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
-
-      // Fondo blanco por defecto para normalizar transparencias
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, width, height);
-
-      // Dibujar la imagen escalada al lienzo
-      ctx.drawImage(img, 0, 0, width, height);
-      resolve(offscreenCanvas);
-    };
-
-    img.onerror = () => {
-      // Fallback sin crossOrigin
-      const fallbackImg = new Image();
-      fallbackImg.onload = () => {
-        const offscreenCanvas = document.createElement('canvas');
-        offscreenCanvas.width = width;
-        offscreenCanvas.height = height;
-        const ctx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
-
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, width, height);
-        ctx.drawImage(fallbackImg, 0, 0, width, height);
-        resolve(offscreenCanvas);
-      };
-      fallbackImg.onerror = (err) => {
-        reject(new Error(`No se pudo cargar la bandera desde ${flagUrl}`));
-      };
-      fallbackImg.src = flagUrl;
-    };
-
-    img.src = flagUrl;
-  });
-}
-
-/**
- * Compara pixel a pixel la ilustración del usuario con la bandera original.
- * 
- * Si options.ignoreShield es true y la bandera tiene metadatos de escudo (options.shield):
- * Los píxeles dentro del área del escudo se computan como acierto si coinciden con el
- * escudo original O con el color base de la franja de fondo (shield.fill).
- * 
- * @param {HTMLCanvasElement} userCanvas
- * @param {HTMLCanvasElement} targetCanvas
- * @param {Object} options { threshold, ignoreShield, shield }
- */
-function compareCanvases(userCanvas, targetCanvas, options = {}) {
-  const width = userCanvas.width;
-  const height = userCanvas.height;
-  const threshold = options.threshold || DEFAULT_THRESHOLD;
-  const ignoreShield = Boolean(options.ignoreShield);
-  const shield = options.shield || null;
-
-  const userCtx = userCanvas.getContext('2d', { willReadFrequently: true });
-  const targetCtx = targetCanvas.getContext('2d', { willReadFrequently: true });
-
-  const userData = userCtx.getImageData(0, 0, width, height).data;
-  const targetData = targetCtx.getImageData(0, 0, width, height).data;
-
-  const totalPixels = width * height;
-  let scoreSum = 0;
-  let matches = 0;
-  const perfectThreshold = threshold;
-  const maxTolerance = options.maxTolerance || MAX_COLOR_TOLERANCE;
-  const toleranceRange = Math.max(1, maxTolerance - perfectThreshold);
-
-  // Si hay escudo que perdonar, parseamos el color base de fondo
-  let shieldFillRgb = null;
-  let sX1 = 0, sX2 = 0, sY1 = 0, sY2 = 0;
-  if (ignoreShield && shield && shield.x && shield.y && shield.fill) {
-    shieldFillRgb = hexToRgb(shield.fill);
-    // Escalar coordenadas del escudo si la resolución difiere de la base 300x200
-    const scaleX = width / 300;
-    const scaleY = height / 200;
-    sX1 = Math.round(shield.x[0] * scaleX);
-    sX2 = Math.round(shield.x[1] * scaleX);
-    sY1 = Math.round(shield.y[0] * scaleY);
-    sY2 = Math.round(shield.y[1] * scaleY);
-  }
-
-  // Canvas para visualizar las diferencias (Mapa de calor: verde intenso -> verde tenue -> rojo)
-  const diffCanvas = document.createElement('canvas');
-  diffCanvas.width = width;
-  diffCanvas.height = height;
-  const diffCtx = diffCanvas.getContext('2d');
-  const diffImageData = diffCtx.createImageData(width, height);
-  const diffData = diffImageData.data;
-
-  const t0 = performance.now();
-  for (let i = 0; i < userData.length; i += 4) {
-    const pixelIndex = i / 4;
-    const x = pixelIndex % width;
-    const y = Math.floor(pixelIndex / width);
-
-    const uR = userData[i];
-    const uG = userData[i + 1];
-    const uB = userData[i + 2];
-
-    const tR = targetData[i];
-    const tG = targetData[i + 1];
-    const tB = targetData[i + 2];
-
-    // Distancia cromática euclidiana contra la bandera original
-    const dr = uR - tR;
-    const dg = uG - tG;
-    const db = uB - tB;
-    let dist = Math.sqrt(dr * dr + dg * dg + db * db);
-
-    // Si estamos en modo perdonar escudo y cae en la zona del escudo, usar la mejor coincidencia
-    if (shieldFillRgb && x >= sX1 && x <= sX2 && y >= sY1 && y <= sY2) {
-      const dFillR = uR - shieldFillRgb.r;
-      const dFillG = uG - shieldFillRgb.g;
-      const dFillB = uB - shieldFillRgb.b;
-      const distFill = Math.sqrt(dFillR * dFillR + dFillG * dFillG + dFillB * dFillB);
-      if (distFill < dist) {
-        dist = distFill;
-      }
-    }
-
-    let pixelScore = 0;
-    if (dist <= perfectThreshold) {
-      pixelScore = 1;
-    } else if (dist < maxTolerance) {
-      pixelScore = 1 - (dist - perfectThreshold) / toleranceRange;
-    }
-
-    scoreSum += pixelScore;
-    if (pixelScore >= 0.5) {
-      matches++;
-    }
-
-    // Luminancia sutil de la bandera objetivo para mantener referencia visual de la forma
-    const lum = tR * 0.299 + tG * 0.587 + tB * 0.114;
-
-    if (pixelScore > 0) {
-      // Acierto: verde cuya intensidad disminuye conforme se aleja del tono objetivo
-      diffData[i] = Math.round(lum * 0.12 + (1 - pixelScore) * 65);
-      diffData[i + 1] = Math.min(255, Math.round(lum * 0.12 + 45 + pixelScore * 195));
-      diffData[i + 2] = Math.round(lum * 0.12 + 20);
-      diffData[i + 3] = 255;
-    } else {
-      // Fallo: rojo claro/intenso
-      diffData[i] = Math.min(255, Math.round(lum * 0.12 + 215));
-      diffData[i + 1] = Math.round(lum * 0.12 + 24);
-      diffData[i + 2] = Math.round(lum * 0.12 + 28);
-      diffData[i + 3] = 255;
-    }
-  }
-  const calcTime = performance.now() - t0;
-  diffCtx.putImageData(diffImageData, 0, 0);
-
-  const rawScore = (scoreSum / totalPixels) * 100;
-  const score = Math.round(rawScore);
-  const gradeInfo = getGradeInfo(score);
-
-  return {
-    score,
-    rawScore: rawScore.toFixed(1),
-    matches,
-    totalPixels,
-    calcTimeMs: calcTime.toFixed(2),
-    diffCanvas,
-    ...gradeInfo
-  };
-}
-
 // --- CANVAS MANAGER ---
 /**
  * Motor de dibujo (Canvas)
@@ -563,7 +319,7 @@ class CanvasManager {
   }
 
   setSize(size) {
-    this.brushSize = Math.max(2, Math.min(40, size));
+    this.brushSize = Math.max(2, Math.min(50, size));
     this.notifyStateChange();
   }
 
@@ -995,7 +751,243 @@ class CanvasManager {
   }
 }
 
-// --- APP & GAME LOGIC ---
+// --- COMPARATOR ENGINE ---
+/**
+ * Algoritmo de contraste y scoring pixel a pixel
+ * Soporta Modo Normal (con perdón/máscara de escudos) y Modo Experto (con escudo obligatorio).
+ */
+
+const DEFAULT_THRESHOLD = 45; // Tolerancia perfecta (distancia RGB donde aún es 100%)
+const MAX_COLOR_TOLERANCE = 135; // Límite máximo permisivo (por encima es 0%)
+
+/**
+ * Devuelve el color, clave de retroalimentación y estado de aprobación
+ * según el porcentaje obtenido.
+ */
+function getScoreInfo(score) {
+  if (score >= 90) {
+    return {
+      color: '#10b981', // Emerald green
+      feedbackKey: 'feedbackPerfect',
+      isPass: true
+    };
+  } else if (score >= 70) {
+    return {
+      color: '#3b82f6', // Blue
+      feedbackKey: 'feedbackGood',
+      isPass: true
+    };
+  } else if (score >= 40) {
+    return {
+      color: '#f59e0b', // Amber
+      feedbackKey: 'feedbackFair',
+      isPass: false
+    };
+  } else {
+    return {
+      color: '#ef4444', // Red
+      feedbackKey: 'feedbackPoor',
+      isPass: false
+    };
+  }
+}
+
+function hexToRgb(hex) {
+  let c = hex.replace('#', '');
+  if (c.length === 3) {
+    c = c.split('').map((char) => char + char).join('');
+  }
+  const num = parseInt(c, 16);
+  return {
+    r: (num >> 16) & 255,
+    g: (num >> 8) & 255,
+    b: num & 255
+  };
+}
+
+/**
+ * Carga una imagen de bandera en un lienzo fuera de pantalla (Offscreen Canvas)
+ * normalizado a la resolución estándar (300 x 200).
+ */
+function renderTargetFlag(flagUrl, width = 300, height = 200) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+
+    if (window.location && window.location.protocol.startsWith('http')) {
+      img.crossOrigin = 'Anonymous';
+    }
+
+    img.onload = () => {
+      const offscreenCanvas = document.createElement('canvas');
+      offscreenCanvas.width = width;
+      offscreenCanvas.height = height;
+      const ctx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
+
+      // Fondo blanco por defecto para normalizar transparencias
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, width, height);
+
+      // Dibujar la imagen escalada al lienzo
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(offscreenCanvas);
+    };
+
+    img.onerror = () => {
+      // Fallback sin crossOrigin
+      const fallbackImg = new Image();
+      fallbackImg.onload = () => {
+        const offscreenCanvas = document.createElement('canvas');
+        offscreenCanvas.width = width;
+        offscreenCanvas.height = height;
+        const ctx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(fallbackImg, 0, 0, width, height);
+        resolve(offscreenCanvas);
+      };
+      fallbackImg.onerror = (err) => {
+        reject(new Error(`No se pudo cargar la bandera desde ${flagUrl}`));
+      };
+      fallbackImg.src = flagUrl;
+    };
+
+    img.src = flagUrl;
+  });
+}
+
+/**
+ * Compara pixel a pixel la ilustración del usuario con la bandera original.
+ * 
+ * Si options.ignoreShield es true y la bandera tiene metadatos de escudo (options.shield):
+ * Los píxeles dentro del área del escudo se computan como acierto si coinciden con el
+ * escudo original O con el color base de la franja de fondo (shield.fill).
+ * 
+ * @param {HTMLCanvasElement} userCanvas
+ * @param {HTMLCanvasElement} targetCanvas
+ * @param {Object} options { threshold, ignoreShield, shield }
+ */
+function compareCanvases(userCanvas, targetCanvas, options = {}) {
+  const width = userCanvas.width;
+  const height = userCanvas.height;
+  const threshold = options.threshold || DEFAULT_THRESHOLD;
+  const ignoreShield = Boolean(options.ignoreShield);
+  const shield = options.shield || null;
+
+  const userCtx = userCanvas.getContext('2d', { willReadFrequently: true });
+  const targetCtx = targetCanvas.getContext('2d', { willReadFrequently: true });
+
+  const userData = userCtx.getImageData(0, 0, width, height).data;
+  const targetData = targetCtx.getImageData(0, 0, width, height).data;
+
+  const totalPixels = width * height;
+  let scoreSum = 0;
+  let matches = 0;
+  const perfectThreshold = threshold;
+  const maxTolerance = options.maxTolerance || MAX_COLOR_TOLERANCE;
+  const toleranceRange = Math.max(1, maxTolerance - perfectThreshold);
+
+  // Si hay escudo que perdonar, parseamos el color base de fondo
+  let shieldFillRgb = null;
+  let sX1 = 0, sX2 = 0, sY1 = 0, sY2 = 0;
+  if (ignoreShield && shield && shield.x && shield.y && shield.fill) {
+    shieldFillRgb = hexToRgb(shield.fill);
+    // Escalar coordenadas del escudo si la resolución difiere de la base 300x200
+    const scaleX = width / 300;
+    const scaleY = height / 200;
+    sX1 = Math.round(shield.x[0] * scaleX);
+    sX2 = Math.round(shield.x[1] * scaleX);
+    sY1 = Math.round(shield.y[0] * scaleY);
+    sY2 = Math.round(shield.y[1] * scaleY);
+  }
+
+  // Canvas para visualizar las diferencias (Mapa de calor: verde intenso -> verde tenue -> rojo)
+  const diffCanvas = document.createElement('canvas');
+  diffCanvas.width = width;
+  diffCanvas.height = height;
+  const diffCtx = diffCanvas.getContext('2d');
+  const diffImageData = diffCtx.createImageData(width, height);
+  const diffData = diffImageData.data;
+
+  const t0 = performance.now();
+  for (let i = 0; i < userData.length; i += 4) {
+    const pixelIndex = i / 4;
+    const x = pixelIndex % width;
+    const y = Math.floor(pixelIndex / width);
+
+    const uR = userData[i];
+    const uG = userData[i + 1];
+    const uB = userData[i + 2];
+
+    const tR = targetData[i];
+    const tG = targetData[i + 1];
+    const tB = targetData[i + 2];
+
+    // Distancia cromática euclidiana contra la bandera original
+    const dr = uR - tR;
+    const dg = uG - tG;
+    const db = uB - tB;
+    let dist = Math.sqrt(dr * dr + dg * dg + db * db);
+
+    // Si estamos en modo perdonar escudo y cae en la zona del escudo, usar la mejor coincidencia
+    if (shieldFillRgb && x >= sX1 && x <= sX2 && y >= sY1 && y <= sY2) {
+      const dFillR = uR - shieldFillRgb.r;
+      const dFillG = uG - shieldFillRgb.g;
+      const dFillB = uB - shieldFillRgb.b;
+      const distFill = Math.sqrt(dFillR * dFillR + dFillG * dFillG + dFillB * dFillB);
+      if (distFill < dist) {
+        dist = distFill;
+      }
+    }
+
+    let pixelScore = 0;
+    if (dist <= perfectThreshold) {
+      pixelScore = 1;
+    } else if (dist < maxTolerance) {
+      pixelScore = 1 - (dist - perfectThreshold) / toleranceRange;
+    }
+
+    scoreSum += pixelScore;
+    if (pixelScore >= 0.5) {
+      matches++;
+    }
+
+    // Luminancia sutil de la bandera objetivo para mantener referencia visual de la forma
+    const lum = tR * 0.299 + tG * 0.587 + tB * 0.114;
+
+    if (pixelScore > 0) {
+      // Acierto: verde cuya intensidad disminuye conforme se aleja del tono objetivo
+      diffData[i] = Math.round(lum * 0.12 + (1 - pixelScore) * 65);
+      diffData[i + 1] = Math.min(255, Math.round(lum * 0.12 + 45 + pixelScore * 195));
+      diffData[i + 2] = Math.round(lum * 0.12 + 20);
+      diffData[i + 3] = 255;
+    } else {
+      // Fallo: rojo claro/intenso
+      diffData[i] = Math.min(255, Math.round(lum * 0.12 + 215));
+      diffData[i + 1] = Math.round(lum * 0.12 + 24);
+      diffData[i + 2] = Math.round(lum * 0.12 + 28);
+      diffData[i + 3] = 255;
+    }
+  }
+  const calcTime = performance.now() - t0;
+  diffCtx.putImageData(diffImageData, 0, 0);
+
+  const rawScore = (scoreSum / totalPixels) * 100;
+  const score = Math.round(rawScore);
+  const scoreInfo = getScoreInfo(score);
+
+  return {
+    score,
+    rawScore: rawScore.toFixed(1),
+    matches,
+    totalPixels,
+    calcTimeMs: calcTime.toFixed(2),
+    diffCanvas,
+    ...scoreInfo
+  };
+}
+
+// --- MAIN GAME ORCHESTRATOR ---
 // Constantes de almacenamiento local
 const STORAGE_KEYS = {
   STREAK: 'flag_drawer_streak',
@@ -1005,7 +997,8 @@ const STORAGE_KEYS = {
   DIFF_APPROACH: 'flag_drawer_diff_approach',
   LANG: 'flag_drawer_lang',
   THEME: 'flag_drawer_theme',
-  SHIELD_MODE: 'flag_drawer_shield_mode'
+  SHIELD_MODE: 'flag_drawer_shield_mode',
+  ONLY_SHIELD_FLAGS: 'flag_drawer_only_shield'
 };
 
 // Diccionario de traducción para interfaz bilingüe
@@ -1044,7 +1037,16 @@ const I18N = {
     realFlag: 'Bandera real',
     showDiff: 'Ver diferencias',
     hideDiff: 'Ocultar diferencias',
+    heatmapLegend: 'Mapa de calor (Verde = acierto, Rojo = fallo)',
+    feedbackPerfect: 'Perfecto. Practicamente identica.',
+    feedbackGood: 'Muy bien, se reconoce claramente.',
+    feedbackFair: 'Buen intento, pero aun faltan detalles.',
+    feedbackPoor: 'No se parece aun, sigue practicando esta bandera.',
     shareResult: 'Compartir',
+    shareModalTitle: 'Compartir resultado',
+    copyImage: 'Copiar imagen',
+    downloadImage: 'Descargar PNG',
+    shareInvite: 'Dibuja banderas de memoria en',
     nextFlag: 'Siguiente bandera',
     // Settings
     settingsTitle: 'Opciones Avanzadas',
@@ -1071,10 +1073,13 @@ const I18N = {
     descShieldSetting: 'Perdonar o exigir escudos e insignias heráldicas complejas.',
     shieldIgnoreOpt: 'Perdonar (Casual)',
     shieldRequireOpt: 'Exigir (Experto)',
+    shieldOnlyOpt: 'Solo banderas con escudo',
     saveSettings: 'Guardar y Continuar',
     // Toasts
     copiedToast: 'Resultado copiado al portapapeles',
     copyFail: 'No se pudo copiar el resultado.',
+    imageCopiedToast: 'Imagen copiada al portapapeles',
+    imageCopyFail: 'No se pudo copiar la imagen. Usa Descargar PNG.',
     mirrorToastV: 'Espejo: Vertical (Izquierda / Derecha)',
     mirrorToastH: 'Espejo: Horizontal (Arriba / Abajo)',
     mirrorToastOff: 'Espejo: Desactivado',
@@ -1114,7 +1119,16 @@ const I18N = {
     realFlag: 'The Real Flag',
     showDiff: 'Show Pixel Diff',
     hideDiff: 'Hide Pixel Diff',
+    heatmapLegend: 'Heatmap (Green = match, Red = miss)',
+    feedbackPerfect: 'Perfect! Spot on.',
+    feedbackGood: 'Clearly recognisable, one element is off.',
+    feedbackFair: 'Good effort, but needs work.',
+    feedbackPoor: 'Not quite, try practicing this one.',
     shareResult: 'Share',
+    shareModalTitle: 'Share Result',
+    copyImage: 'Copy Image',
+    downloadImage: 'Download PNG',
+    shareInvite: 'Draw flags from memory at',
     nextFlag: 'Next Flag',
     // Settings
     settingsTitle: 'Advanced Options',
@@ -1141,10 +1155,13 @@ const I18N = {
     descShieldSetting: 'Forgive or require complex heraldic coats of arms.',
     shieldIgnoreOpt: 'Forgive (Casual)',
     shieldRequireOpt: 'Require (Expert)',
+    shieldOnlyOpt: 'Only flags with shields',
     saveSettings: 'Done',
     // Toasts
     copiedToast: 'Result copied to clipboard',
     copyFail: 'Could not copy result.',
+    imageCopiedToast: 'Image copied to clipboard',
+    imageCopyFail: 'Could not copy image. Use Download PNG.',
     mirrorToastV: 'Mirror: Vertical (Left / Right)',
     mirrorToastH: 'Mirror: Horizontal (Top / Bottom)',
     mirrorToastOff: 'Mirror: Off',
@@ -1165,6 +1182,7 @@ class FlagGame {
     this.currentLang = 'es'; // 'es' | 'en'
     this.currentTheme = 'dark'; // 'dark' | 'light'
     this.shieldMode = 'ignore'; // 'ignore' | 'require'
+    this.onlyShieldFlags = false;
 
     // Estadísticas
     this.stats = {
@@ -1179,8 +1197,45 @@ class FlagGame {
     this.loadSettings();
     this.attachEventListeners();
 
-    // Iniciar con una bandera aleatoria según los filtros
+    // Iniciar con una bandera aleatoria según los filtros y cargar clasificacion desde JSON
     this.pickNextFlag();
+    this.loadClassificationConfig();
+  }
+
+  async loadClassificationConfig() {
+    try {
+      const response = await fetch('data/flags-config.json', { cache: 'no-cache' });
+      if (!response.ok) return;
+      const config = await response.json();
+      if (!config || typeof config !== 'object') return;
+
+      this.flags.forEach((flag) => {
+        const entry = config[flag.id];
+        if (!entry) return;
+        if (typeof entry.popTier === 'number') {
+          flag.popTier = entry.popTier;
+        }
+        if (typeof entry.designTier === 'number') {
+          flag.designTier = entry.designTier;
+        }
+        if (typeof entry.hasShield === 'boolean') {
+          flag.hasShield = entry.hasShield;
+        }
+        if ('shield' in entry) {
+          flag.shield = entry.shield;
+        }
+      });
+
+      this.updateChipsUI();
+      this.updateFlagShieldBadge();
+
+      const filtered = this.getFilteredFlags();
+      if (this.currentFlag && !filtered.some((f) => f.id === this.currentFlag.id)) {
+        this.pickNextFlag();
+      }
+    } catch (_) {
+      // En protocolo file:// fetch puede ser bloqueado por CORS; se mantiene el catalogo base.
+    }
   }
 
   initElements() {
@@ -1272,11 +1327,10 @@ class FlagGame {
     this.resultsModal = document.getElementById('results-modal');
     this.modalCountryName = document.getElementById('modal-country-name');
     this.modalTierBadge = document.getElementById('modal-tier-badge');
-    this.modalRatioBadge = document.getElementById('modal-ratio-badge');
     this.modalShieldBadge = document.getElementById('modal-shield-badge');
-    this.gradeBadgeEl = document.getElementById('grade-badge');
     this.modalScoreEl = document.getElementById('modal-score');
     this.modalFeedbackEl = document.getElementById('modal-feedback');
+    this.lblHeatmapLegend = document.getElementById('lbl-heatmap-legend');
     this.lblYourDrawing = document.getElementById('lbl-your-drawing');
     this.lblRealFlag = document.getElementById('lbl-real-flag');
     this.resultUserCanvas = document.getElementById('result-user-canvas');
@@ -1297,6 +1351,16 @@ class FlagGame {
     this.toggleDiffBtn = document.getElementById('toggle-diff-btn');
     this.diffContainer = document.getElementById('diff-view-container');
 
+    // Modal de compartir imagen
+    this.shareModal = document.getElementById('share-modal');
+    this.shareModalTitleEl = document.getElementById('share-modal-title');
+    this.btnCloseShare = document.getElementById('btn-close-share');
+    this.sharePreviewImg = document.getElementById('share-preview-img');
+    this.copyShareBtn = document.getElementById('copy-share-btn');
+    this.lblCopyShare = document.getElementById('lbl-copy-share');
+    this.downloadShareBtn = document.getElementById('download-share-btn');
+    this.lblDownloadShare = document.getElementById('lbl-download-share');
+
     // Modal de configuraciones
     this.settingsModal = document.getElementById('settings-modal');
     this.btnCloseSettings = document.getElementById('btn-close-settings');
@@ -1312,6 +1376,9 @@ class FlagGame {
     this.btnThemeLight = document.getElementById('btn-theme-light');
     this.btnShieldIgnore = document.getElementById('btn-shield-ignore');
     this.btnShieldRequire = document.getElementById('btn-shield-require');
+    this.shieldOnlyRow = document.getElementById('shield-only-row');
+    this.chkShieldOnly = document.getElementById('chk-shield-only');
+    this.lblShieldOnly = document.getElementById('lbl-shield-only');
     this.txtThemeDark = document.getElementById('txt-theme-dark');
     this.txtThemeLight = document.getElementById('txt-theme-light');
     this.txtShieldIgnore = document.getElementById('txt-shield-ignore');
@@ -1414,6 +1481,8 @@ class FlagGame {
       if (savedShieldMode && ['ignore', 'require'].includes(savedShieldMode)) {
         this.shieldMode = savedShieldMode;
       }
+
+      this.onlyShieldFlags = localStorage.getItem(STORAGE_KEYS.ONLY_SHIELD_FLAGS) === 'true';
     } catch (_) {}
 
     // Aplicar configuraciones al DOM
@@ -1430,6 +1499,7 @@ class FlagGame {
       localStorage.setItem(STORAGE_KEYS.DIFF_APPROACH, this.diffApproach);
       localStorage.setItem(STORAGE_KEYS.SELECTED_TIERS, JSON.stringify(this.selectedTiers));
       localStorage.setItem(STORAGE_KEYS.SHIELD_MODE, this.shieldMode);
+      localStorage.setItem(STORAGE_KEYS.ONLY_SHIELD_FLAGS, this.onlyShieldFlags ? 'true' : 'false');
     } catch (_) {}
   }
 
@@ -1487,6 +1557,11 @@ class FlagGame {
     this.lblRealFlag.textContent = t.realFlag;
     this.shareTextEl.textContent = t.shareResult;
     this.lblNextFlag.textContent = t.nextFlag;
+    if (this.shareModalTitleEl) this.shareModalTitleEl.textContent = t.shareModalTitle;
+    if (this.lblCopyShare) this.lblCopyShare.textContent = t.copyImage;
+    if (this.lblDownloadShare) this.lblDownloadShare.textContent = t.downloadImage;
+    if (this.lblHeatmapLegend) this.lblHeatmapLegend.textContent = t.heatmapLegend;
+    if (this.lblShieldOnly) this.lblShieldOnly.textContent = t.shieldOnlyOpt;
     if (this.lblModalStreak) this.lblModalStreak.textContent = t.streak;
     if (this.lblModalBest) this.lblModalBest.textContent = t.best;
     if (this.lblModalPlayed) this.lblModalPlayed.textContent = t.played;
@@ -1536,6 +1611,12 @@ class FlagGame {
     // 4. Modo escudos
     this.btnShieldIgnore.classList.toggle('active', this.shieldMode === 'ignore');
     this.btnShieldRequire.classList.toggle('active', this.shieldMode === 'require');
+    if (this.shieldOnlyRow) {
+      this.shieldOnlyRow.classList.toggle('hidden', this.shieldMode !== 'require');
+    }
+    if (this.chkShieldOnly) {
+      this.chkShieldOnly.checked = this.onlyShieldFlags;
+    }
   }
 
   /**
@@ -1592,8 +1673,15 @@ class FlagGame {
 
   getFilteredFlags() {
     const tierProp = (this.diffApproach === 'popularity') ? 'popTier' : 'designTier';
-    const filtered = this.flags.filter((f) => this.selectedTiers.includes(f[tierProp]));
-    return (filtered.length > 0) ? filtered : this.flags;
+    let pool = this.flags;
+    if (this.shieldMode === 'require' && this.onlyShieldFlags) {
+      const shieldPool = pool.filter((f) => f.hasShield);
+      if (shieldPool.length > 0) {
+        pool = shieldPool;
+      }
+    }
+    const filtered = pool.filter((f) => this.selectedTiers.includes(f[tierProp]));
+    return (filtered.length > 0) ? filtered : pool;
   }
 
   updateFlagShieldBadge() {
@@ -1854,6 +1942,12 @@ class FlagGame {
       this.setShieldMode('require');
     });
 
+    if (this.chkShieldOnly) {
+      this.chkShieldOnly.addEventListener('change', (e) => {
+        this.setOnlyShieldFlags(Boolean(e.target.checked));
+      });
+    }
+
     // Chips de selección múltiple de dificultad
     this.tierChips.forEach((chip) => {
       chip.addEventListener('click', () => {
@@ -1930,6 +2024,24 @@ class FlagGame {
       this.shareResult();
     });
 
+    // Modal compartir imagen
+    if (this.btnCloseShare) {
+      this.btnCloseShare.addEventListener('click', () => this.closeShareModal());
+    }
+    if (this.shareModal) {
+      this.shareModal.addEventListener('click', (e) => {
+        if (e.target === this.shareModal) {
+          this.closeShareModal();
+        }
+      });
+    }
+    if (this.copyShareBtn) {
+      this.copyShareBtn.addEventListener('click', () => this.copyShareImage());
+    }
+    if (this.downloadShareBtn) {
+      this.downloadShareBtn.addEventListener('click', () => this.downloadShareImage());
+    }
+
     // Toggle de Diff heatmap
     this.toggleDiffBtn.addEventListener('click', () => {
       const isHidden = this.diffContainer.classList.toggle('hidden');
@@ -1980,6 +2092,8 @@ class FlagGame {
       } else if (e.key === 'Escape') {
         if (this.colorPickerPopover && !this.colorPickerPopover.classList.contains('hidden')) {
           this.closeColorPopover();
+        } else if (this.shareModal && !this.shareModal.classList.contains('hidden')) {
+          this.closeShareModal();
         } else if (!this.resultsModal.classList.contains('hidden')) {
           this.closeModal();
         } else if (!this.settingsModal.classList.contains('hidden')) {
@@ -2016,7 +2130,21 @@ class FlagGame {
     this.shieldMode = mode;
     this.saveSettings();
     this.updateSettingsModalUI();
+    this.updateChipsUI();
     this.updateFlagShieldBadge();
+    if (this.shieldMode === 'require' && this.onlyShieldFlags && this.currentFlag && !this.currentFlag.hasShield) {
+      this.pickNextFlag();
+    }
+  }
+
+  setOnlyShieldFlags(enabled) {
+    this.onlyShieldFlags = Boolean(enabled);
+    this.saveSettings();
+    this.updateSettingsModalUI();
+    this.updateChipsUI();
+    if (this.shieldMode === 'require' && this.onlyShieldFlags && this.currentFlag && !this.currentFlag.hasShield) {
+      this.pickNextFlag();
+    }
   }
 
   openSettingsModal() {
@@ -2389,10 +2517,7 @@ class FlagGame {
 
     this.modalScoreEl.textContent = `${result.score}%`;
     this.modalScoreEl.style.color = result.color;
-
-    this.gradeBadgeEl.textContent = result.badge;
-    this.gradeBadgeEl.style.backgroundColor = result.color;
-    this.modalFeedbackEl.textContent = result.feedback;
+    this.modalFeedbackEl.textContent = t[result.feedbackKey] || '';
 
     const w = this.canvasManager.width;
     const h = this.canvasManager.height;
@@ -2404,14 +2529,12 @@ class FlagGame {
     this.resultDiffCanvas.width = w;
     this.resultDiffCanvas.height = h;
 
-    const modalFrames = document.querySelectorAll('.comparison-box .frame, .diff-view-box .frame');
+    const modalFrames = document.querySelectorAll('.comparison-box .frame, .diff-container .frame');
+    const ratioNum = this.currentFlag.ratio || (w / h);
     modalFrames.forEach((frame) => {
       frame.style.setProperty('--flag-aspect-ratio', `${w} / ${h}`);
+      frame.style.setProperty('--flag-aspect-num', `${ratioNum}`);
     });
-
-    if (this.modalRatioBadge) {
-      this.modalRatioBadge.textContent = this.currentFlag.aspectText || `${(this.currentFlag.ratio || 1.5).toFixed(2)}:1`;
-    }
 
     const userResultCtx = this.resultUserCanvas.getContext('2d');
     userResultCtx.clearRect(0, 0, w, h);
@@ -2437,51 +2560,182 @@ class FlagGame {
     this.resultsModal.classList.add('hidden');
   }
 
+  openShareModal() {
+    if (this.shareModal) {
+      this.shareModal.classList.remove('hidden');
+    }
+  }
+
+  closeShareModal() {
+    if (this.shareModal) {
+      this.shareModal.classList.add('hidden');
+    }
+  }
+
+  generateShareSummaryImage() {
+    const t = I18N[this.currentLang];
+    const w = this.resultUserCanvas.width || 300;
+    const h = this.resultUserCanvas.height || 200;
+    const ratio = w / h;
+
+    const cardWidth = 900;
+    const padX = 48;
+    const gap = 32;
+    const flagW = Math.floor((cardWidth - padX * 2 - gap) / 2);
+    const flagH = Math.round(flagW / ratio);
+
+    const headerH = 104;
+    const labelH = 30;
+    const footerH = 82;
+    const bottomGap = 32;
+    const cardHeight = headerH + labelH + flagH + bottomGap + footerH;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = cardWidth;
+    canvas.height = cardHeight;
+    const ctx = canvas.getContext('2d');
+
+    // Fondo blanco limpio estilo Suizo
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, cardWidth, cardHeight);
+
+    // Borde exterior sutil
+    ctx.strokeStyle = '#E2E2E2';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(1, 1, cardWidth - 2, cardHeight - 2);
+
+    // Barra superior: marca a la izquierda, pais + puntuacion a la derecha
+    ctx.fillStyle = '#E63946';
+    ctx.fillRect(padX, 32, 8, 34);
+
+    ctx.fillStyle = '#0D0D0D';
+    ctx.font = '800 24px "Helvetica Neue", Arial, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('FLAG DRAWER', padX + 20, 49);
+
+    const scoreText = `${this.lastResult.score}%`;
+    ctx.font = '800 32px "JetBrains Mono", monospace';
+    const scoreWidth = ctx.measureText(scoreText).width;
+    ctx.fillStyle = this.lastResult.color || '#0D0D0D';
+    ctx.textAlign = 'right';
+    ctx.fillText(scoreText, cardWidth - padX, 49);
+
+    const countryName = (this.currentFlag.name[this.currentLang] || this.currentFlag.name.es).toUpperCase();
+    ctx.fillStyle = '#0D0D0D';
+    ctx.font = '700 24px "Helvetica Neue", Arial, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(countryName, cardWidth - padX - scoreWidth - 18, 49);
+
+    // Linea divisoria superior
+    ctx.strokeStyle = '#EAEAEA';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padX, headerH - 12);
+    ctx.lineTo(cardWidth - padX, headerH - 12);
+    ctx.stroke();
+
+    // Etiquetas de comparacion
+    const flagsTopY = headerH + 6;
+    const leftX = padX;
+    const rightX = padX + flagW + gap;
+
+    ctx.fillStyle = '#555555';
+    ctx.font = '700 14px "Helvetica Neue", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(t.yourDrawing.toUpperCase(), leftX + flagW / 2, flagsTopY + 10);
+    ctx.fillText(t.realFlag.toUpperCase(), rightX + flagW / 2, flagsTopY + 10);
+
+    // Dibujo del usuario y bandera real
+    const imgY = flagsTopY + labelH;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(leftX, imgY, flagW, flagH);
+    ctx.drawImage(this.resultUserCanvas, leftX, imgY, flagW, flagH);
+    ctx.strokeStyle = '#D4D4D4';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(leftX, imgY, flagW, flagH);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(rightX, imgY, flagW, flagH);
+    ctx.drawImage(this.resultTargetCanvas, rightX, imgY, flagW, flagH);
+    ctx.strokeStyle = '#D4D4D4';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(rightX, imgY, flagW, flagH);
+
+    // Footer con link para invitar a jugar (texto mas grande)
+    const footerY = cardHeight - footerH;
+    ctx.fillStyle = '#F7F7F7';
+    ctx.fillRect(2, footerY, cardWidth - 4, footerH - 2);
+    ctx.strokeStyle = '#E2E2E2';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(2, footerY);
+    ctx.lineTo(cardWidth - 2, footerY);
+    ctx.stroke();
+
+    ctx.fillStyle = '#444444';
+    ctx.font = '600 19px "Helvetica Neue", Arial, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(t.shareInvite, padX, footerY + footerH / 2);
+
+    ctx.fillStyle = '#0D0D0D';
+    ctx.font = '700 19px "JetBrains Mono", monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText('https://gabriel5znk.github.io/flag-drawer/', cardWidth - padX, footerY + footerH / 2);
+
+    return new Promise((resolve) => {
+      const dataUrl = canvas.toDataURL('image/png');
+      canvas.toBlob((blob) => {
+        resolve({ blob, dataUrl });
+      }, 'image/png');
+    });
+  }
+
   async shareResult() {
     if (!this.lastResult || !this.currentFlag) return;
 
-    const t = I18N[this.currentLang];
-    const tierProp = (this.diffApproach === 'popularity') ? 'popTier' : 'designTier';
-    const tierNum = this.currentFlag[tierProp];
-    const meta = this.tierMeta[this.diffApproach][tierNum];
-    const tierName = meta ? meta.shortName[this.currentLang] : `T${tierNum}`;
-
-    const shieldText = this.currentFlag.hasShield
-      ? (this.shieldMode === 'ignore' ? t.shieldOptional : t.shieldRequired)
-      : t.noShield;
-
-    const countryName = this.currentFlag.name[this.currentLang] || this.currentFlag.name.es;
-    const shareText = `FLAG DRAWER — ${countryName.toUpperCase()} (T${tierNum}: ${tierName})\nScore: ${this.lastResult.score}% (${this.lastResult.badge}) | ${shieldText}\nStreak: ${this.stats.streak} | Record: ${this.stats.best}%\n#FlagDrawer`;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Flag Guess & Draw Result',
-          text: shareText
-        });
-        return;
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          console.warn('navigator.share falló:', err);
-        }
+    try {
+      const { blob, dataUrl } = await this.generateShareSummaryImage();
+      this.shareImageBlob = blob;
+      this.shareImageDataUrl = dataUrl;
+      if (this.sharePreviewImg) {
+        this.sharePreviewImg.src = dataUrl;
       }
+      this.openShareModal();
+    } catch (err) {
+      console.error('Error generando imagen de resumen:', err);
+      this.showToast(I18N[this.currentLang].copyFail);
     }
+  }
+
+  downloadShareImage() {
+    if (!this.shareImageDataUrl || !this.currentFlag) return;
+    const link = document.createElement('a');
+    link.download = `flag-drawer-${this.currentFlag.id}.png`;
+    link.href = this.shareImageDataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  async copyShareImage() {
+    const t = I18N[this.currentLang];
+    if (!this.shareImageBlob) return;
 
     try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(shareText);
-        this.showToast(t.copiedToast);
+      if (navigator.clipboard && navigator.clipboard.write && typeof ClipboardItem !== 'undefined') {
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': this.shareImageBlob })
+        ]);
+        this.showToast(t.imageCopiedToast);
       } else {
-        const tempInput = document.createElement('textarea');
-        tempInput.value = shareText;
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand('copy');
-        document.body.removeChild(tempInput);
-        this.showToast(t.copiedToast);
+        this.showToast(t.imageCopyFail);
       }
     } catch (err) {
-      this.showToast(t.copyFail);
+      console.warn('Error al copiar imagen al portapapeles:', err);
+      this.showToast(t.imageCopyFail);
     }
   }
 
@@ -2514,6 +2768,25 @@ function startFlagGame() {
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', startFlagGame);
+} else {
+  startFlagGame();
+}
+
+// Inicialización universal
+function startFlagGame() {
+  try {
+    window.flagGame = new FlagGame();
+  } catch (err) {
+    console.error("Fatal initialization error in FlagGame:", err);
+    const target = document.getElementById("country-target");
+    if (target) {
+      target.textContent = "Error: " + err.message;
+    }
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", startFlagGame);
 } else {
   startFlagGame();
 }

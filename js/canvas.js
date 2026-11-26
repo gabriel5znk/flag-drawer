@@ -143,7 +143,7 @@ export class CanvasManager {
   }
 
   setSize(size) {
-    this.brushSize = Math.max(2, Math.min(40, size));
+    this.brushSize = Math.max(2, Math.min(50, size));
     this.notifyStateChange();
   }
 

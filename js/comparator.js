@@ -7,40 +7,32 @@ export const DEFAULT_THRESHOLD = 45; // Tolerancia perfecta (distancia RGB donde
 export const MAX_COLOR_TOLERANCE = 135; // Límite máximo permisivo (por encima es 0%)
 
 /**
- * Devuelve la calificación cualitativa, medalla y mensaje de retroalimentación
+ * Devuelve el color, clave de retroalimentación y estado de aprobación
  * según el porcentaje obtenido.
  */
-export function getGradeInfo(score) {
+export function getScoreInfo(score) {
   if (score >= 90) {
     return {
-      grade: 'S',
-      badge: 'Grade S',
       color: '#10b981', // Emerald green
-      feedback: 'Perfect! Spot on.',
+      feedbackKey: 'feedbackPerfect',
       isPass: true
     };
   } else if (score >= 70) {
     return {
-      grade: 'B',
-      badge: 'Grade B',
       color: '#3b82f6', // Blue
-      feedback: 'Clearly recognisable, one element is off.',
+      feedbackKey: 'feedbackGood',
       isPass: true
     };
   } else if (score >= 40) {
     return {
-      grade: 'C',
-      badge: 'Grade C',
       color: '#f59e0b', // Amber
-      feedback: 'Good effort, but needs work.',
+      feedbackKey: 'feedbackFair',
       isPass: false
     };
   } else {
     return {
-      grade: 'F',
-      badge: 'Grade F',
       color: '#ef4444', // Red
-      feedback: 'Not quite, try practicing this one.',
+      feedbackKey: 'feedbackPoor',
       isPass: false
     };
   }
@@ -228,7 +220,7 @@ export function compareCanvases(userCanvas, targetCanvas, options = {}) {
 
   const rawScore = (scoreSum / totalPixels) * 100;
   const score = Math.round(rawScore);
-  const gradeInfo = getGradeInfo(score);
+  const scoreInfo = getScoreInfo(score);
 
   return {
     score,
@@ -237,6 +229,6 @@ export function compareCanvases(userCanvas, targetCanvas, options = {}) {
     totalPixels,
     calcTimeMs: calcTime.toFixed(2),
     diffCanvas,
-    ...gradeInfo
+    ...scoreInfo
   };
 }

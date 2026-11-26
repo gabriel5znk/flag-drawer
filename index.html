@@ -222,7 +222,7 @@
         <!-- Slider & Brush preview -->
         <div class="slider-row">
           <label for="brush-size" class="slider-label" id="lbl-thickness">Grosor</label>
-          <input type="range" id="brush-size" min="2" max="40" value="10" class="slider-input">
+          <input type="range" id="brush-size" min="2" max="50" value="10" class="slider-input">
           <div class="brush-preview-wrap" title="Grosor actual">
             <span id="brush-size-val">10px</span>
             <div id="brush-dot" class="brush-dot"></div>
@@ -310,7 +310,6 @@
           <div class="modal-meta-row">
             <span id="modal-country-name" class="modal-country-title">Francia</span>
             <span id="modal-tier-badge" class="tier-pill tier-1">Tier 1</span>
-            <span id="modal-ratio-badge" class="ratio-pill">3:2</span>
             <span id="modal-shield-badge" class="shield-pill">
               <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
@@ -318,9 +317,8 @@
               <span>Sin escudo</span>
             </span>
           </div>
-          <div class="grade-badge" id="grade-badge">Grade S</div>
           <h2 class="modal-title" id="modal-score">85%</h2>
-          <p class="modal-feedback" id="modal-feedback">Clearly recognisable, one element is off.</p>
+          <p class="modal-feedback" id="modal-feedback">Muy bien, casi idéntica.</p>
         </div>
 
         <!-- Comparative Side-by-Side View -->
@@ -345,7 +343,7 @@
             Ver diferencias
           </button>
           <div id="diff-view-container" class="diff-container hidden">
-            <span class="box-tag">Mapa de calor (Verde = acierto, Rojo = fallo)</span>
+            <span class="box-tag" id="lbl-heatmap-legend">Mapa de calor (Verde = acierto, Rojo = fallo)</span>
             <div class="frame">
               <canvas id="result-diff-canvas" width="300" height="200"></canvas>
             </div>
@@ -386,6 +384,52 @@
               <line x1="5" y1="12" x2="19" y2="12"></line>
               <polyline points="12 5 19 12 12 19"></polyline>
             </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Share Summary Image Modal -->
+    <div id="share-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
+      <div class="modal-card share-card">
+        <div class="settings-header">
+          <div class="settings-title-group">
+            <svg class="settings-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+            <h2 id="share-modal-title" class="settings-title">Compartir resultado</h2>
+          </div>
+          <button id="btn-close-share" class="btn-close" aria-label="Cerrar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div class="share-preview-wrap">
+          <img id="share-preview-img" class="share-preview-img" alt="Resumen del resultado" />
+        </div>
+
+        <div class="modal-actions">
+          <button id="copy-share-btn" class="btn btn-secondary flex-1">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span id="lbl-copy-share">Copiar imagen</span>
+          </button>
+          <button id="download-share-btn" class="btn btn-primary flex-1">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span id="lbl-download-share">Descargar PNG</span>
           </button>
         </div>
       </div>
@@ -537,6 +581,10 @@
                 <span id="txt-shield-require">Exigir (Experto)</span>
               </button>
             </div>
+            <label id="shield-only-row" class="setting-suboption hidden">
+              <input type="checkbox" id="chk-shield-only" class="suboption-checkbox">
+              <span id="lbl-shield-only">Solo banderas con escudo</span>
+            </label>
           </div>
         </div>
 

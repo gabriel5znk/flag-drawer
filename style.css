@@ -1266,6 +1266,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
+  min-height: 0;
 }
 
 .box-tag {
@@ -1278,9 +1280,13 @@ body {
 }
 
 .frame {
+  position: relative;
   width: 100%;
   aspect-ratio: var(--flag-aspect-ratio, 3 / 2);
+  max-width: calc(280px * var(--flag-aspect-num, 1.5));
   max-height: 280px;
+  min-width: 0;
+  min-height: 0;
   margin: 0 auto;
   background-color: #FFFFFF;
   border: 1px solid var(--border-color);
@@ -1292,7 +1298,8 @@ body {
 
 .frame canvas {
   width: 100%;
-  height: 100%;
+  height: auto;
+  aspect-ratio: var(--flag-aspect-ratio, 3 / 2);
   display: block;
 }
 
@@ -1355,6 +1362,58 @@ body {
 
 .modal-actions .btn {
   padding: 12px;
+}
+
+/* Share Modal */
+.share-card {
+  max-width: 540px;
+}
+
+.share-preview-wrap {
+  width: 100%;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.share-preview-img {
+  width: 100%;
+  height: auto;
+  max-height: 55vh;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  display: block;
+}
+
+.setting-suboption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
+  user-select: none;
+}
+
+.setting-suboption.hidden {
+  display: none;
+}
+
+.suboption-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
 }
 
 /* ==========================================================================
@@ -1738,6 +1797,7 @@ body {
   }
 
   .frame {
+    max-width: calc(320px * var(--flag-aspect-num, 1.5));
     max-height: 320px;
   }
 }
