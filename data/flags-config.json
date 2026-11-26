@@ -1096,5 +1096,413 @@
     "designTier": 1,
     "hasShield": false,
     "shield": null
+  },
+  "kp": {
+    "popTier": 1,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "ir": {
+    "popTier": 1,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        120,
+        180
+      ],
+      "y": [
+        70,
+        130
+      ],
+      "fill": "#FFFFFF"
+    }
+  },
+  "tw": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "bd": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "dz": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "tn": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "iq": {
+    "popTier": 2,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        95,
+        205
+      ],
+      "y": [
+        75,
+        125
+      ],
+      "fill": "#FFFFFF"
+    }
+  },
+  "sy": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "sv": {
+    "popTier": 2,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        115,
+        185
+      ],
+      "y": [
+        70,
+        130
+      ],
+      "fill": "#FFFFFF"
+    }
+  },
+  "hn": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "ni": {
+    "popTier": 2,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        115,
+        185
+      ],
+      "y": [
+        70,
+        130
+      ],
+      "fill": "#FFFFFF"
+    }
+  },
+  "ht": {
+    "popTier": 2,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        120,
+        180
+      ],
+      "y": [
+        70,
+        130
+      ],
+      "fill": "#FFFFFF"
+    }
+  },
+  "by": {
+    "popTier": 2,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "am": {
+    "popTier": 2,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "az": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "et": {
+    "popTier": 2,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "cm": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "sn": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "kh": {
+    "popTier": 2,
+    "designTier": 4,
+    "hasShield": false,
+    "shield": null
+  },
+  "mm": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "af": {
+    "popTier": 3,
+    "designTier": 1,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        115,
+        185
+      ],
+      "y": [
+        65,
+        135
+      ],
+      "fill": "#D32011"
+    }
+  },
+  "ao": {
+    "popTier": 3,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "ly": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "so": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "sd": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "om": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        15,
+        75
+      ],
+      "y": [
+        10,
+        65
+      ],
+      "fill": "#DB161B"
+    }
+  },
+  "la": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "bw": {
+    "popTier": 3,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "na": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "rw": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "zm": {
+    "popTier": 3,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "cd": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "cg": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "mg": {
+    "popTier": 3,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "xk": {
+    "popTier": 3,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "bz": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        105,
+        195
+      ],
+      "y": [
+        45,
+        155
+      ],
+      "fill": "#FFFFFF"
+    }
+  },
+  "mv": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "lr": {
+    "popTier": 3,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "bj": {
+    "popTier": 3,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "tg": {
+    "popTier": 3,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "ne": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "bf": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "mw": {
+    "popTier": 3,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "mr": {
+    "popTier": 3,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "gm": {
+    "popTier": 3,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "sl": {
+    "popTier": 3,
+    "designTier": 1,
+    "hasShield": false,
+    "shield": null
+  },
+  "kn": {
+    "popTier": 4,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "bi": {
+    "popTier": 4,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "cf": {
+    "popTier": 4,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "gq": {
+    "popTier": 4,
+    "designTier": 2,
+    "hasShield": true,
+    "shield": {
+      "x": [
+        125,
+        175
+      ],
+      "y": [
+        70,
+        130
+      ],
+      "fill": "#FFFFFF"
+    }
+  },
+  "gw": {
+    "popTier": 4,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "er": {
+    "popTier": 4,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
+  },
+  "ss": {
+    "popTier": 4,
+    "designTier": 3,
+    "hasShield": false,
+    "shield": null
   }
 }
