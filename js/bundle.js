@@ -1132,7 +1132,7 @@ const I18N = {
     copiedToast: 'Resultado copiado al portapapeles',
     copyFail: 'No se pudo copiar el resultado.',
     imageCopiedToast: 'Imagen copiada al portapapeles',
-    imageCopyFail: 'No se pudo copiar la imagen. Usa Descargar PNG.',
+    imageCopyFail: 'Tu navegador bloquea copiar por boton. Manten pulsada la imagen para copiarla o usa Descargar PNG.',
     mirrorToastV: 'Espejo: Vertical (Izquierda / Derecha)',
     mirrorToastH: 'Espejo: Horizontal (Arriba / Abajo)',
     mirrorToastOff: 'Espejo: Desactivado',
@@ -1214,7 +1214,7 @@ const I18N = {
     copiedToast: 'Result copied to clipboard',
     copyFail: 'Could not copy result.',
     imageCopiedToast: 'Image copied to clipboard',
-    imageCopyFail: 'Could not copy image. Use Download PNG.',
+    imageCopyFail: 'Browser blocked button copy. Long-press the image to copy it or use Download PNG.',
     mirrorToastV: 'Mirror: Vertical (Left / Right)',
     mirrorToastH: 'Mirror: Horizontal (Top / Bottom)',
     mirrorToastOff: 'Mirror: Off',
@@ -2776,20 +2776,51 @@ class FlagGame {
   async copyShareImage() {
     const t = I18N[this.currentLang];
     if (!this.shareImageBlob) return;
+    const shareUrl = 'https://gabriel5znk.github.io/flag-drawer/';
 
-    try {
-      if (navigator.clipboard && navigator.clipboard.write && typeof ClipboardItem !== 'undefined') {
+    if (navigator.clipboard && navigator.clipboard.write && typeof ClipboardItem !== 'undefined') {
+      // Intentar copiar imagen + URL juntos
+      try {
         await navigator.clipboard.write([
-          new ClipboardItem({ 'image/png': this.shareImageBlob })
+          new ClipboardItem({
+            'image/png': this.shareImageBlob,
+            'text/plain': new Blob([shareUrl], { type: 'text/plain' })
+          })
         ]);
         this.showToast(t.imageCopiedToast);
-      } else {
-        this.showToast(t.imageCopyFail);
+        return;
+      } catch (_) {
+        // Algunos navegadores moviles rechazan ClipboardItem mixto; reintentar solo con la imagen
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': this.shareImageBlob })
+          ]);
+          this.showToast(t.imageCopiedToast);
+          return;
+        } catch (err) {
+          console.warn('navigator.clipboard.write fallo:', err);
+        }
       }
-    } catch (err) {
-      console.warn('Error al copiar imagen al portapapeles:', err);
-      this.showToast(t.imageCopyFail);
     }
+
+    // Respaldo mediante seleccion del <img> + execCommand (util en WebViews / moviles)
+    try {
+      if (this.sharePreviewImg && window.getSelection && document.createRange) {
+        const range = document.createRange();
+        range.selectNode(this.sharePreviewImg);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        const copied = document.execCommand('copy');
+        selection.removeAllRanges();
+        if (copied) {
+          this.showToast(t.imageCopiedToast);
+          return;
+        }
+      }
+    } catch (_) {}
+
+    this.showToast(t.imageCopyFail);
   }
 
   showToast(message) {
