@@ -812,6 +812,7 @@ class CanvasManager {
 
 const DEFAULT_THRESHOLD = 45; // Tolerancia perfecta (distancia RGB donde aún es 100%)
 const MAX_COLOR_TOLERANCE = 135; // Límite máximo permisivo (por encima es 0%)
+const ASSET_VERSION = '20261125-2';
 
 /**
  * Devuelve el color, clave de retroalimentación y estado de aprobación
@@ -865,8 +866,10 @@ function hexToRgb(hex) {
 function renderTargetFlag(flagUrl, width = 300, height = 200) {
   return new Promise((resolve, reject) => {
     const img = new Image();
+    const isHttp = Boolean(window.location && window.location.protocol.startsWith('http'));
+    const resolvedUrl = isHttp && !flagUrl.includes('?') ? `${flagUrl}?v=${ASSET_VERSION}` : flagUrl;
 
-    if (window.location && window.location.protocol.startsWith('http')) {
+    if (isHttp) {
       img.crossOrigin = 'Anonymous';
     }
 
@@ -902,10 +905,10 @@ function renderTargetFlag(flagUrl, width = 300, height = 200) {
       fallbackImg.onerror = (err) => {
         reject(new Error(`No se pudo cargar la bandera desde ${flagUrl}`));
       };
-      fallbackImg.src = flagUrl;
+      fallbackImg.src = resolvedUrl;
     };
 
-    img.src = flagUrl;
+    img.src = resolvedUrl;
   });
 }
 
