@@ -60,6 +60,8 @@ const I18N = {
     shareModalTitle: 'Compartir resultado',
     copyImage: 'Copiar imagen',
     downloadImage: 'Descargar PNG',
+    copyInviteLink: 'Copiar enlace para invitar a jugar',
+    inviteLinkCopiedToast: 'Enlace copiado al portapapeles',
     shareInvite: 'Dibuja banderas de memoria en',
     nextFlag: 'Siguiente bandera',
     // Settings
@@ -142,6 +144,8 @@ const I18N = {
     shareModalTitle: 'Share Result',
     copyImage: 'Copy Image',
     downloadImage: 'Download PNG',
+    copyInviteLink: 'Copy invite link to play',
+    inviteLinkCopiedToast: 'Invite link copied to clipboard',
     shareInvite: 'Draw flags from memory at',
     nextFlag: 'Next Flag',
     // Settings
@@ -374,6 +378,9 @@ class FlagGame {
     this.lblCopyShare = document.getElementById('lbl-copy-share');
     this.downloadShareBtn = document.getElementById('download-share-btn');
     this.lblDownloadShare = document.getElementById('lbl-download-share');
+    this.copyInviteLinkBtn = document.getElementById('copy-invite-link-btn');
+    this.lblCopyInviteLink = document.getElementById('lbl-copy-invite-link');
+    this.customColor = null;
 
     // Modal de configuraciones
     this.settingsModal = document.getElementById('settings-modal');
@@ -574,6 +581,7 @@ class FlagGame {
     if (this.shareModalTitleEl) this.shareModalTitleEl.textContent = t.shareModalTitle;
     if (this.lblCopyShare) this.lblCopyShare.textContent = t.copyImage;
     if (this.lblDownloadShare) this.lblDownloadShare.textContent = t.downloadImage;
+    if (this.lblCopyInviteLink) this.lblCopyInviteLink.textContent = t.copyInviteLink;
     if (this.lblHeatmapLegend) this.lblHeatmapLegend.textContent = t.heatmapLegend;
     if (this.lblShieldOnly) this.lblShieldOnly.textContent = t.shieldOnlyOpt;
     if (this.lblModalStreak) this.lblModalStreak.textContent = t.streak;
@@ -1019,6 +1027,17 @@ class FlagGame {
       });
     });
 
+    // Botón de color personalizado guardado
+    if (this.activeColorSwatch) {
+      this.activeColorSwatch.addEventListener('click', () => {
+        if (this.customColor) {
+          this.updateColor(this.customColor, true, true);
+        } else {
+          this.openColorPopover();
+        }
+      });
+    }
+
     // Rueda cromática personalizada
     this.initColorWheel();
 
@@ -1054,6 +1073,9 @@ class FlagGame {
     }
     if (this.downloadShareBtn) {
       this.downloadShareBtn.addEventListener('click', () => this.downloadShareImage());
+    }
+    if (this.copyInviteLinkBtn) {
+      this.copyInviteLinkBtn.addEventListener('click', () => this.copyInviteLink());
     }
 
     // Toggle de Diff heatmap
@@ -1178,13 +1200,17 @@ class FlagGame {
     this.brushDot.style.height = `${dotSize}px`;
   }
 
-  updateColor(color, syncWheel = true) {
+  setCustomColor(color) {
+    this.customColor = color.toUpperCase();
+    if (this.activeColorSwatch) {
+      this.activeColorSwatch.style.setProperty('--swatch-color', this.customColor);
+      this.activeColorSwatch.title = this.customColor;
+    }
+  }
+
+  updateColor(color, syncWheel = true, preferCustomSwatch = false) {
     this.canvasManager.setColor(color);
     this.brushDot.style.backgroundColor = color;
-
-    if (this.activeColorSwatch) {
-      this.activeColorSwatch.style.setProperty('--swatch-color', color);
-    }
 
     if (syncWheel && this.colorWheelCanvas) {
       this.syncWheelFromHex(color);
@@ -1193,7 +1219,7 @@ class FlagGame {
     let foundMatch = false;
     const normalizedColor = color.toUpperCase();
     this.colorSwatches.forEach((swatch) => {
-      if (swatch.dataset.color.toUpperCase() === normalizedColor) {
+      if (!preferCustomSwatch && swatch.dataset.color.toUpperCase() === normalizedColor) {
         swatch.classList.add('active');
         foundMatch = true;
       } else {
@@ -1201,10 +1227,9 @@ class FlagGame {
       }
     });
 
-    if (!foundMatch && this.activeColorSwatch) {
-      this.activeColorSwatch.classList.add('active-custom');
-    } else if (this.activeColorSwatch) {
-      this.activeColorSwatch.classList.remove('active-custom');
+    const isCustomActive = Boolean(this.customColor && this.customColor === normalizedColor && (preferCustomSwatch || !foundMatch));
+    if (this.activeColorSwatch) {
+      this.activeColorSwatch.classList.toggle('active-custom', isCustomActive);
     }
   }
 
@@ -1282,7 +1307,9 @@ class FlagGame {
         let val = e.target.value.trim();
         if (!val.startsWith('#')) val = '#' + val;
         if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
-          this.updateColor(val.toUpperCase(), true);
+          const hex = val.toUpperCase();
+          this.setCustomColor(hex);
+          this.updateColor(hex, true, true);
         }
       });
     }
@@ -1343,7 +1370,8 @@ class FlagGame {
     if (this.colorPickerPreview) this.colorPickerPreview.style.backgroundColor = hex;
     if (this.colorHexInput) this.colorHexInput.value = hex;
     this.updateWheelCursor();
-    this.updateColor(hex, false);
+    this.setCustomColor(hex);
+    this.updateColor(hex, false, true);
   }
 
   syncWheelFromHex(hex) {
@@ -1732,6 +1760,37 @@ class FlagGame {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }
+
+  async copyInviteLink() {
+    const t = I18N[this.currentLang];
+    const inviteUrl = 'https://gabriel5znk.github.io/flag-drawer/';
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(inviteUrl);
+        this.showToast(t.inviteLinkCopiedToast);
+        return;
+      } catch (_) {}
+    }
+
+    try {
+      const textarea = document.createElement('textarea');
+      textarea.value = inviteUrl;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      const copied = document.execCommand('copy');
+      document.body.removeChild(textarea);
+      if (copied) {
+        this.showToast(t.inviteLinkCopiedToast);
+        return;
+      }
+    } catch (_) {}
+
+    this.showToast(t.copyFail);
   }
 
   async copyShareImage() {

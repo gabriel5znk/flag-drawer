@@ -14,5 +14,6 @@
 
 ## Restricciones Técnicas
 - El canvas de dibujo esta normalizado estrictamente a una proporcion fija de 300x200 pixeles (proporcion 3:2) para estandarizar la comparacion con los SVGs vectoriales.
+- **Atributos obligatorios en SVGs de banderas (`assets/flags/*.svg`):** Todos los archivos SVG deben declarar explícitamente `width` y `height` numéricos en la etiqueta raíz `<svg>` acordes a su `viewBox` y proporción (`ratio` en `js/flags.js`). Sin `width` y `height` explícitos, los navegadores pueden usar un tamaño intrínseco por defecto (300x150) al cargar con `new Image()` y `ctx.drawImage()`, provocando recortes o deformaciones en el canvas de referencia y la vista comparativa.
 - El rendimiento de flood fill e interpolacion pixel a pixel depende del acceso a `ImageData`, optimizado mediante buffers de 32 bits y contexto `willReadFrequently`.
 - No se utilizan dependencias de terceros ni frameworks de frontend (React, Vue, Tailwind, etc.), manteniendo el codigo ligero y libre de dependencias externas.

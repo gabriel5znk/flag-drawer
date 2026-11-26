@@ -256,10 +256,10 @@
             <button class="color-swatch" data-color="#00A3E0" style="--swatch-color: #00A3E0;" title="Cian"></button>
             <button class="color-swatch" data-color="#7E22CE" style="--swatch-color: #7E22CE;" title="Púrpura / Morado"></button>
             
-            <!-- Celda de Color Activo / Personalizado -->
-            <div id="active-color-swatch" class="color-swatch active-preview" title="Color activo" style="--swatch-color: #CE1126;">
+            <!-- Celda de Color Personalizado Guardado -->
+            <button id="active-color-swatch" type="button" class="color-swatch active-preview" title="Color personalizado" style="--swatch-color: transparent;">
               <span class="active-dot"></span>
-            </div>
+            </button>
 
             <!-- Botón con Círculo Cromático -->
             <button id="color-wheel-btn" class="color-wheel-btn" type="button" title="Selector de color personalizado" aria-expanded="false" aria-controls="custom-color-popover">
@@ -433,6 +433,16 @@
               <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
             <span id="lbl-download-share">Descargar PNG</span>
+          </button>
+        </div>
+
+        <div class="share-invite-row">
+          <button id="copy-invite-link-btn" class="btn btn-secondary btn-full" type="button">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            <span id="lbl-copy-invite-link">Copiar enlace para invitar a jugar</span>
           </button>
         </div>
       </div>

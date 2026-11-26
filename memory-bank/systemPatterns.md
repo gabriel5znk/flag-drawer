@@ -29,7 +29,7 @@ El proyecto sigue una arquitectura modular en cliente (Client-Side Vanilla Archi
 - Soporta simetria de dibujo en tiempo real (modo espejo vertical u horizontal).
 
 ### 2. Evaluador Cromático y Scoring (`js/comparator.js`)
-- Dibuja la bandera SVG objetivo sobre un canvas virtual de referencia escalado a las dimensiones exactas `(width, height)` del dibujo actual.
+- Dibuja la bandera SVG objetivo sobre un canvas virtual de referencia escalado a las dimensiones exactas `(width, height)` del dibujo actual. Cada SVG en `assets/flags/` debe incluir atributos `width` y `height` explícitos en su elemento raíz `<svg>` para evitar recortes o deformaciones al rasterizarse con `drawImage`.
 - En caso de banderas con escudos y modo casual activado, escala las coordenadas de la mascara de escudo desde la base 300x200 hacia la resolucion activa y toma la menor distancia entre el color oficial y `shield.fill`.
 - Realiza una comparacion pixel a pixel con puntuacion gradual continua:
   - Distancia RGB <= `DEFAULT_THRESHOLD` (45): 100% de acierto (`1.0`).

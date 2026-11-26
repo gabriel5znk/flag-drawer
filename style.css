@@ -862,13 +862,13 @@ body {
   box-shadow: 0 0 0 2px var(--accent-blue);
 }
 
-/* Celda de color activo / personalizado */
+/* Celda de color personalizado guardado */
 .active-preview {
   display: flex;
   align-items: center;
   justify-content: center;
   border: 2px dashed var(--neutral-grey);
-  cursor: default;
+  cursor: pointer;
 }
 
 .active-preview.active-custom {
@@ -1387,6 +1387,14 @@ body {
   object-fit: contain;
   border-radius: var(--radius-sm);
   display: block;
+}
+
+.share-invite-row {
+  margin-top: 8px;
+}
+
+.btn-full {
+  width: 100%;
 }
 
 .setting-suboption {
