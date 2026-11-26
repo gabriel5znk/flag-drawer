@@ -11,6 +11,24 @@
     "hasShield": false,
     "shield": null
   },
+  "gb-eng": {
+    "popTier": 1,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "gb-sct": {
+    "popTier": 2,
+    "designTier": 2,
+    "hasShield": false,
+    "shield": null
+  },
+  "gb-wls": {
+    "popTier": 3,
+    "designTier": 4,
+    "hasShield": false,
+    "shield": null
+  },
   "fr": {
     "popTier": 1,
     "designTier": 1,
@@ -170,7 +188,7 @@
     "shield": null
   },
   "se": {
-    "popTier": 1,
+    "popTier": 2,
     "designTier": 2,
     "hasShield": false,
     "shield": null
@@ -188,7 +206,7 @@
     "shield": null
   },
   "gr": {
-    "popTier": 1,
+    "popTier": 2,
     "designTier": 3,
     "hasShield": false,
     "shield": null
@@ -222,7 +240,7 @@
     "shield": null
   },
   "uy": {
-    "popTier": 1,
+    "popTier": 2,
     "designTier": 3,
     "hasShield": true,
     "shield": {
@@ -238,43 +256,43 @@
     }
   },
   "be": {
-    "popTier": 1,
+    "popTier": 2,
     "designTier": 1,
     "hasShield": false,
     "shield": null
   },
   "ie": {
-    "popTier": 1,
+    "popTier": 2,
     "designTier": 1,
     "hasShield": false,
     "shield": null
   },
   "dk": {
-    "popTier": 1,
+    "popTier": 2,
     "designTier": 2,
     "hasShield": false,
     "shield": null
   },
   "pl": {
-    "popTier": 1,
+    "popTier": 2,
     "designTier": 1,
     "hasShield": false,
     "shield": null
   },
   "at": {
-    "popTier": 1,
+    "popTier": 2,
     "designTier": 1,
     "hasShield": false,
     "shield": null
   },
   "za": {
-    "popTier": 1,
+    "popTier": 2,
     "designTier": 3,
     "hasShield": false,
     "shield": null
   },
   "no": {
-    "popTier": 1,
+    "popTier": 2,
     "designTier": 3,
     "hasShield": false,
     "shield": null
@@ -310,7 +328,7 @@
     "shield": null
   },
   "ve": {
-    "popTier": 2,
+    "popTier": 1,
     "designTier": 2,
     "hasShield": false,
     "shield": null
@@ -362,19 +380,19 @@
     "shield": null
   },
   "cz": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 2,
     "hasShield": false,
     "shield": null
   },
   "hu": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 1,
     "hasShield": false,
     "shield": null
   },
   "ro": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 1,
     "hasShield": false,
     "shield": null
@@ -448,7 +466,7 @@
     "shield": null
   },
   "hr": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 1,
     "hasShield": true,
     "shield": {
@@ -476,19 +494,19 @@
     "shield": null
   },
   "ke": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 3,
     "hasShield": false,
     "shield": null
   },
   "lb": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 2,
     "hasShield": false,
     "shield": null
   },
   "mc": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 1,
     "hasShield": false,
     "shield": null
@@ -542,7 +560,7 @@
     }
   },
   "sk": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 1,
     "hasShield": true,
     "shield": {
@@ -558,7 +576,7 @@
     }
   },
   "rs": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 1,
     "hasShield": true,
     "shield": {
@@ -574,13 +592,13 @@
     }
   },
   "bg": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 1,
     "hasShield": false,
     "shield": null
   },
   "gh": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 2,
     "hasShield": false,
     "shield": null
@@ -686,13 +704,13 @@
     "shield": null
   },
   "tz": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 3,
     "hasShield": false,
     "shield": null
   },
   "ug": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 3,
     "hasShield": false,
     "shield": null
@@ -704,7 +722,7 @@
     "shield": null
   },
   "zw": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 3,
     "hasShield": false,
     "shield": null
@@ -728,7 +746,7 @@
     "shield": null
   },
   "sr": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 2,
     "hasShield": false,
     "shield": null
@@ -740,19 +758,19 @@
     "shield": null
   },
   "ag": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 3,
     "hasShield": false,
     "shield": null
   },
   "bh": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 2,
     "hasShield": false,
     "shield": null
   },
   "mz": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 4,
     "hasShield": false,
     "shield": null
@@ -764,19 +782,19 @@
     "shield": null
   },
   "mt": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 2,
     "hasShield": false,
     "shield": null
   },
   "sc": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 3,
     "hasShield": false,
     "shield": null
   },
   "pg": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 4,
     "hasShield": false,
     "shield": null
@@ -800,13 +818,13 @@
     "shield": null
   },
   "gn": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 1,
     "hasShield": false,
     "shield": null
   },
   "ml": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 1,
     "hasShield": false,
     "shield": null
@@ -844,7 +862,7 @@
     }
   },
   "va": {
-    "popTier": 4,
+    "popTier": 2,
     "designTier": 4,
     "hasShield": true,
     "shield": {
@@ -966,7 +984,7 @@
     "shield": null
   },
   "uz": {
-    "popTier": 4,
+    "popTier": 3,
     "designTier": 3,
     "hasShield": false,
     "shield": null
@@ -1098,13 +1116,13 @@
     "shield": null
   },
   "kp": {
-    "popTier": 1,
+    "popTier": 2,
     "designTier": 2,
     "hasShield": false,
     "shield": null
   },
   "ir": {
-    "popTier": 1,
+    "popTier": 2,
     "designTier": 1,
     "hasShield": true,
     "shield": {
@@ -1126,19 +1144,19 @@
     "shield": null
   },
   "bd": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 2,
     "hasShield": false,
     "shield": null
   },
   "dz": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 2,
     "hasShield": false,
     "shield": null
   },
   "tn": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 2,
     "hasShield": false,
     "shield": null
@@ -1204,7 +1222,7 @@
     }
   },
   "ht": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 1,
     "hasShield": true,
     "shield": {
@@ -1220,55 +1238,55 @@
     }
   },
   "by": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 3,
     "hasShield": false,
     "shield": null
   },
   "am": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 1,
     "hasShield": false,
     "shield": null
   },
   "az": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 2,
     "hasShield": false,
     "shield": null
   },
   "et": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 3,
     "hasShield": false,
     "shield": null
   },
   "cm": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 2,
     "hasShield": false,
     "shield": null
   },
   "sn": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 2,
     "hasShield": false,
     "shield": null
   },
   "kh": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 4,
     "hasShield": false,
     "shield": null
   },
   "mm": {
-    "popTier": 2,
+    "popTier": 3,
     "designTier": 2,
     "hasShield": false,
     "shield": null
   },
   "af": {
-    "popTier": 3,
+    "popTier": 2,
     "designTier": 1,
     "hasShield": true,
     "shield": {
@@ -1308,7 +1326,7 @@
     "shield": null
   },
   "om": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 2,
     "hasShield": true,
     "shield": {
@@ -1324,31 +1342,31 @@
     }
   },
   "la": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 2,
     "hasShield": false,
     "shield": null
   },
   "bw": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 1,
     "hasShield": false,
     "shield": null
   },
   "na": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 2,
     "hasShield": false,
     "shield": null
   },
   "rw": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 2,
     "hasShield": false,
     "shield": null
   },
   "zm": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 3,
     "hasShield": false,
     "shield": null
@@ -1372,7 +1390,7 @@
     "shield": null
   },
   "xk": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 3,
     "hasShield": false,
     "shield": null
@@ -1394,61 +1412,61 @@
     }
   },
   "mv": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 2,
     "hasShield": false,
     "shield": null
   },
   "lr": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 3,
     "hasShield": false,
     "shield": null
   },
   "bj": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 1,
     "hasShield": false,
     "shield": null
   },
   "tg": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 3,
     "hasShield": false,
     "shield": null
   },
   "ne": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 2,
     "hasShield": false,
     "shield": null
   },
   "bf": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 2,
     "hasShield": false,
     "shield": null
   },
   "mw": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 3,
     "hasShield": false,
     "shield": null
   },
   "mr": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 2,
     "hasShield": false,
     "shield": null
   },
   "gm": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 1,
     "hasShield": false,
     "shield": null
   },
   "sl": {
-    "popTier": 3,
+    "popTier": 4,
     "designTier": 1,
     "hasShield": false,
     "shield": null
