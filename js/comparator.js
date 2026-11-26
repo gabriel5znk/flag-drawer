@@ -5,7 +5,7 @@
 
 export const DEFAULT_THRESHOLD = 45; // Tolerancia perfecta (distancia RGB donde aún es 100%)
 export const MAX_COLOR_TOLERANCE = 135; // Límite máximo permisivo (por encima es 0%)
-const ASSET_VERSION = '20261125-2';
+const ASSET_VERSION = '20261126-1';
 
 /**
  * Devuelve el color, clave de retroalimentación y estado de aprobación

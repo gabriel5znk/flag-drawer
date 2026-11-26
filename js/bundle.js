@@ -272,6 +272,8 @@ class CanvasManager {
     this.startX = 0;
     this.startY = 0;
     this.dragSnapshot = null;
+    this.hoverCoords = null;
+    this.strokeStarts = [];
 
     // Callbacks
     this.onStateChange = options.onStateChange || null;
@@ -297,6 +299,7 @@ class CanvasManager {
 
     this.undoStack = [];
     this.redoStack = [];
+    this.strokeStarts = [];
     this.initCanvas();
     this.notifyStateChange();
   }
@@ -357,12 +360,14 @@ class CanvasManager {
   clear() {
     this.ctx.fillStyle = '#FFFFFF';
     this.ctx.fillRect(0, 0, this.width, this.height);
+    this.strokeStarts = [];
     this.saveState();
   }
 
   setTool(tool) {
     this.currentTool = tool;
     this.isLineToolActive = (tool === 'line');
+    this.renderOverlay(this.hoverCoords);
     this.notifyStateChange();
   }
 
@@ -373,6 +378,7 @@ class CanvasManager {
 
   setSize(size) {
     this.brushSize = Math.max(2, Math.min(50, size));
+    this.renderOverlay(this.hoverCoords);
     this.notifyStateChange();
   }
 
@@ -411,34 +417,97 @@ class CanvasManager {
   }
 
   /**
-   * Dibuja o limpia la línea guía punteada del modo espejo en el canvas overlay
+   * Dibuja guias del modo espejo y el circulo indicador del pincel en el canvas overlay
    */
   renderMirrorGuide() {
+    this.renderOverlay(this.hoverCoords);
+  }
+
+  renderOverlay(cursorCoords = null) {
     if (!this.overlayCtx) return;
     this.overlayCtx.clearRect(0, 0, this.width, this.height);
 
-    if (!this.mirrorMode) return;
+    if (this.mirrorMode) {
+      this.overlayCtx.save();
+      this.overlayCtx.setLineDash([4, 4]);
+      this.overlayCtx.lineWidth = 1.5;
+      this.overlayCtx.strokeStyle = 'rgba(59, 130, 246, 0.75)';
 
-    this.overlayCtx.save();
-    this.overlayCtx.setLineDash([4, 4]);
-    this.overlayCtx.lineWidth = 1.5;
-    this.overlayCtx.strokeStyle = 'rgba(59, 130, 246, 0.75)';
+      if (this.mirrorMode === 'vertical') {
+        const midX = Math.floor(this.width / 2);
+        this.overlayCtx.beginPath();
+        this.overlayCtx.moveTo(midX, 0);
+        this.overlayCtx.lineTo(midX, this.height);
+        this.overlayCtx.stroke();
+      } else if (this.mirrorMode === 'horizontal') {
+        const midY = Math.floor(this.height / 2);
+        this.overlayCtx.beginPath();
+        this.overlayCtx.moveTo(0, midY);
+        this.overlayCtx.lineTo(this.width, midY);
+        this.overlayCtx.stroke();
+      }
 
-    if (this.mirrorMode === 'vertical') {
-      const midX = Math.floor(this.width / 2);
-      this.overlayCtx.beginPath();
-      this.overlayCtx.moveTo(midX, 0);
-      this.overlayCtx.lineTo(midX, this.height);
-      this.overlayCtx.stroke();
-    } else if (this.mirrorMode === 'horizontal') {
-      const midY = Math.floor(this.height / 2);
-      this.overlayCtx.beginPath();
-      this.overlayCtx.moveTo(0, midY);
-      this.overlayCtx.lineTo(this.width, midY);
-      this.overlayCtx.stroke();
+      this.overlayCtx.restore();
     }
 
-    this.overlayCtx.restore();
+    if ((this.currentTool === 'brush' || this.currentTool === 'line') && cursorCoords) {
+      const r = Math.max(1, this.brushSize / 2);
+      this.overlayCtx.save();
+      this.overlayCtx.beginPath();
+      this.overlayCtx.arc(cursorCoords.x, cursorCoords.y, r, 0, Math.PI * 2);
+      this.overlayCtx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+      this.overlayCtx.lineWidth = 2;
+      this.overlayCtx.stroke();
+
+      this.overlayCtx.beginPath();
+      this.overlayCtx.arc(cursorCoords.x, cursorCoords.y, r, 0, Math.PI * 2);
+      this.overlayCtx.strokeStyle = 'rgba(13, 13, 13, 0.8)';
+      this.overlayCtx.lineWidth = 1;
+      this.overlayCtx.stroke();
+      this.overlayCtx.restore();
+    }
+  }
+
+  /**
+   * Aplica magnetismo ligero hacia la mitad vertical/horizontal del lienzo
+   * y, al finalizar un trazo, hacia el inicio de otros trazos del mismo color.
+   */
+  applySnap(x, y, isEnd = false) {
+    let sx = x;
+    let sy = y;
+    const isBrush = (this.currentTool === 'brush');
+    const pointThreshold = isBrush ? 5 : 10;
+    const axisThreshold = isBrush ? 3 : 6;
+
+    if (isEnd && this.strokeStarts.length > 0) {
+      const color = this.currentColor.toLowerCase();
+      let bestDist = pointThreshold;
+      let bestPt = null;
+      for (let i = 0; i < this.strokeStarts.length; i++) {
+        const pt = this.strokeStarts[i];
+        if (pt.color !== color) continue;
+        const d = Math.hypot(x - pt.x, y - pt.y);
+        if (d <= bestDist) {
+          bestDist = d;
+          bestPt = pt;
+        }
+      }
+      if (bestPt) {
+        return { x: bestPt.x, y: bestPt.y };
+      }
+    }
+
+    const midX = Math.round(this.width / 2);
+    const midY = Math.round(this.height / 2);
+
+    if (Math.abs(sx - midX) <= axisThreshold) {
+      sx = midX;
+    }
+    if (Math.abs(sy - midY) <= axisThreshold) {
+      sy = midY;
+    }
+
+    return { x: sx, y: sy };
   }
 
   notifyStateChange() {
@@ -471,6 +540,10 @@ class CanvasManager {
     this.canvas.addEventListener('pointermove', (e) => this.handlePointerMove(e));
     this.canvas.addEventListener('pointerup', (e) => this.handlePointerUp(e));
     this.canvas.addEventListener('pointercancel', (e) => this.handlePointerUp(e));
+    this.canvas.addEventListener('pointerleave', () => {
+      this.hoverCoords = null;
+      this.renderOverlay(null);
+    });
     this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
@@ -480,7 +553,11 @@ class CanvasManager {
       this.canvas.setPointerCapture(e.pointerId);
     } catch (_) {}
 
-    const coords = this.getCanvasCoords(e);
+    const raw = this.getCanvasCoords(e);
+    const coords = (this.currentTool === 'fill') ? raw : this.applySnap(raw.x, raw.y, false);
+    this.hoverCoords = coords;
+    this.renderOverlay(coords);
+
     this.isDrawing = true;
     this.startX = coords.x;
     this.startY = coords.y;
@@ -519,8 +596,14 @@ class CanvasManager {
   }
 
   handlePointerMove(e) {
+    const raw = this.getCanvasCoords(e);
+    const coords = (this.currentTool === 'fill')
+      ? raw
+      : this.applySnap(raw.x, raw.y, this.isDrawing);
+    this.hoverCoords = coords;
+    this.renderOverlay(coords);
+
     if (!this.isDrawing) return;
-    const coords = this.getCanvasCoords(e);
 
     if (this.currentTool === 'brush') {
       // Trazo principal
@@ -586,7 +669,10 @@ class CanvasManager {
       this.canvas.releasePointerCapture(e.pointerId);
     } catch (_) {}
 
-    const coords = this.getCanvasCoords(e);
+    const raw = this.getCanvasCoords(e);
+    const coords = this.applySnap(raw.x, raw.y, true);
+    this.hoverCoords = coords;
+    this.renderOverlay(coords);
 
     if (this.currentTool === 'line') {
       if (this.dragSnapshot) {
@@ -600,6 +686,7 @@ class CanvasManager {
             this.drawLine(s0.x, s0.y, s1.x, s1.y);
           }
         }
+        this.strokeStarts.push({ x: this.startX, y: this.startY, color: this.currentColor.toLowerCase() });
         this.dragSnapshot = null;
         this.saveState();
       }
@@ -634,6 +721,17 @@ class CanvasManager {
         this.saveState();
       }
     } else if (this.currentTool === 'brush') {
+      if (coords.x !== this.lastX || coords.y !== this.lastY) {
+        this.drawLine(this.lastX, this.lastY, coords.x, coords.y);
+        if (this.mirrorMode) {
+          const s0 = this.applySymmetry(this.lastX, this.lastY);
+          const s1 = this.applySymmetry(coords.x, coords.y);
+          if (s0 && s1) {
+            this.drawLine(s0.x, s0.y, s1.x, s1.y);
+          }
+        }
+      }
+      this.strokeStarts.push({ x: this.startX, y: this.startY, color: this.currentColor.toLowerCase() });
       this.saveState();
     }
   }
@@ -812,7 +910,7 @@ class CanvasManager {
 
 const DEFAULT_THRESHOLD = 45; // Tolerancia perfecta (distancia RGB donde aún es 100%)
 const MAX_COLOR_TOLERANCE = 135; // Límite máximo permisivo (por encima es 0%)
-const ASSET_VERSION = '20261125-2';
+const ASSET_VERSION = '20261126-1';
 
 /**
  * Devuelve el color, clave de retroalimentación y estado de aprobación
@@ -2779,34 +2877,20 @@ class FlagGame {
   async copyShareImage() {
     const t = I18N[this.currentLang];
     if (!this.shareImageBlob) return;
-    const shareUrl = 'https://gabriel5znk.github.io/flag-drawer/';
 
     if (navigator.clipboard && navigator.clipboard.write && typeof ClipboardItem !== 'undefined') {
-      // Intentar copiar imagen + URL juntos
       try {
         await navigator.clipboard.write([
-          new ClipboardItem({
-            'image/png': this.shareImageBlob,
-            'text/plain': new Blob([shareUrl], { type: 'text/plain' })
-          })
+          new ClipboardItem({ 'image/png': this.shareImageBlob })
         ]);
         this.showToast(t.imageCopiedToast);
         return;
-      } catch (_) {
-        // Algunos navegadores moviles rechazan ClipboardItem mixto; reintentar solo con la imagen
-        try {
-          await navigator.clipboard.write([
-            new ClipboardItem({ 'image/png': this.shareImageBlob })
-          ]);
-          this.showToast(t.imageCopiedToast);
-          return;
-        } catch (err) {
-          console.warn('navigator.clipboard.write fallo:', err);
-        }
+      } catch (err) {
+        console.warn('navigator.clipboard.write fallo:', err);
       }
     }
 
-    // Respaldo mediante seleccion del <img> + execCommand (util en WebViews / moviles)
+    // Respaldo mediante seleccion del <img> + execCommand
     try {
       if (this.sharePreviewImg && window.getSelection && document.createRange) {
         const range = document.createRange();
@@ -2822,6 +2906,19 @@ class FlagGame {
         }
       }
     } catch (_) {}
+
+    // Si el navegador movil bloquea copiar imagen, copiar al menos el texto con el enlace
+    if (this.currentFlag && this.lastResult) {
+      const countryName = this.currentFlag.name[this.currentLang] || this.currentFlag.name.es;
+      const shareText = `Flag Drawer — ${countryName}: ${this.lastResult.score}%\nhttps://gabriel5znk.github.io/flag-drawer/`;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(shareText);
+          this.showToast(t.copiedToast);
+          return;
+        }
+      } catch (_) {}
+    }
 
     this.showToast(t.imageCopyFail);
   }

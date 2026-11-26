@@ -1737,34 +1737,20 @@ class FlagGame {
   async copyShareImage() {
     const t = I18N[this.currentLang];
     if (!this.shareImageBlob) return;
-    const shareUrl = 'https://gabriel5znk.github.io/flag-drawer/';
 
     if (navigator.clipboard && navigator.clipboard.write && typeof ClipboardItem !== 'undefined') {
-      // Intentar copiar imagen + URL juntos
       try {
         await navigator.clipboard.write([
-          new ClipboardItem({
-            'image/png': this.shareImageBlob,
-            'text/plain': new Blob([shareUrl], { type: 'text/plain' })
-          })
+          new ClipboardItem({ 'image/png': this.shareImageBlob })
         ]);
         this.showToast(t.imageCopiedToast);
         return;
-      } catch (_) {
-        // Algunos navegadores moviles rechazan ClipboardItem mixto; reintentar solo con la imagen
-        try {
-          await navigator.clipboard.write([
-            new ClipboardItem({ 'image/png': this.shareImageBlob })
-          ]);
-          this.showToast(t.imageCopiedToast);
-          return;
-        } catch (err) {
-          console.warn('navigator.clipboard.write fallo:', err);
-        }
+      } catch (err) {
+        console.warn('navigator.clipboard.write fallo:', err);
       }
     }
 
-    // Respaldo mediante seleccion del <img> + execCommand (util en WebViews / moviles)
+    // Respaldo mediante seleccion del <img> + execCommand
     try {
       if (this.sharePreviewImg && window.getSelection && document.createRange) {
         const range = document.createRange();
@@ -1780,6 +1766,19 @@ class FlagGame {
         }
       }
     } catch (_) {}
+
+    // Si el navegador movil bloquea copiar imagen, copiar al menos el texto con el enlace
+    if (this.currentFlag && this.lastResult) {
+      const countryName = this.currentFlag.name[this.currentLang] || this.currentFlag.name.es;
+      const shareText = `Flag Drawer — ${countryName}: ${this.lastResult.score}%\nhttps://gabriel5znk.github.io/flag-drawer/`;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(shareText);
+          this.showToast(t.copiedToast);
+          return;
+        }
+      } catch (_) {}
+    }
 
     this.showToast(t.imageCopyFail);
   }
